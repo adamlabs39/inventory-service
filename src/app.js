@@ -4,6 +4,7 @@ import routes from "./routes/routes.js";
 import errorMiddleware from "./middlewares/error-middleware.js";
 import authorizationSdk from "@adameds/authorization-sdk";
 import {dbSeeder} from "./seeders/db-seeder.js";
+import MODELMERGE from "./models/model-synchronize.js";
 
 const APPLICATION_PORT = process.env.APPLICATION_PORT;
 const APPLICATION_HOST = process.env.APPLICATION_HOST;
@@ -24,10 +25,8 @@ app.listen(APPLICATION_PORT, APPLICATION_HOST, async () => {
         // for (const model of MODELMERGE) {
         //     await model.sync({ alter: false, force: true });
         // }
-        // //
-        // //
-        //
-        await dbSeeder();
+
+        // await dbSeeder();
     } catch (error) {
         console.error("Failed to synchronize the database:", error);
     }
