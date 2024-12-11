@@ -1,0 +1,25 @@
+{
+  "name": "adameds-inventory",
+  "version": "1.0.0",
+  "description": "inventory for adameds",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "dev": "nodemon ./src/app.js",
+    "start": "node ./src/app.js"
+  },
+  "dependencies": {
+    "@adameds/authorization-sdk": "^1.0.0",
+    "@adameds/model-sdk": "^1.0.12",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "sequelize": "^6.37.5",
+    "uuidv7": "^1.0.2",
+    "zod": "^3.24.1"
+  }
+}

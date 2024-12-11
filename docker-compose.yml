@@ -1,0 +1,31 @@
+services:
+  adameds-inventory:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      no_cache: true
+    image: adameds/faramsi-service:dev
+    container_name: adameds-inventory
+    ports:
+      - 8086:8086
+    restart: always
+    networks:
+      - inventory-network
+    environment:
+      DOTENV_KEY: ${DOTENV_KEY}
+      API_BASE: ${API_BASE}
+      API_VERSION: ${API_VERSION}
+      BASE_URL: ${BASE_URL}
+    volumes:
+      - type: bind
+        source: /home/admin/adameds/private.key
+        target: /adameds-inventory/private.key
+      - type: bind
+        source: /home/admin/adameds/public.key
+        target: /adameds-inventory/public.key
+      - type: bind
+        source: /home/admin/adameds/.env.vault
+        target: /adameds-inventory/.env.vault
+networks:
+    inventory-network:
+        driver: bridge
