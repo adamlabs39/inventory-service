@@ -7,7 +7,7 @@ services:
     image: adameds/faramsi-service:dev
     container_name: adameds-inventory
     ports:
-      - 8086:8086
+      - 8088:8088
     restart: always
     networks:
       - inventory-network
