@@ -18,12 +18,6 @@ services:
       BASE_URL: ${BASE_URL}
     volumes:
       - type: bind
-        source: /home/admin/adameds/private.key
-        target: /adameds-inventory/private.key
-      - type: bind
-        source: /home/admin/adameds/public.key
-        target: /adameds-inventory/public.key
-      - type: bind
         source: /home/admin/adameds/.env.vault
         target: /adameds-inventory/.env.vault
 networks:
