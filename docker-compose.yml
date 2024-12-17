@@ -19,7 +19,7 @@ services:
     volumes:
       - type: bind
         source: /home/admin/adameds/.env.vault
-        target: adameds-inventory/.env.vault
+        target: /adameds-inventory/.env.vault
 networks:
     inventory-network:
         driver: bridge
