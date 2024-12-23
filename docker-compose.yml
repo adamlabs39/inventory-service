@@ -4,7 +4,7 @@ services:
       context: ./
       dockerfile: Dockerfile
       no_cache: true
-    image: adameds/faramsi-service:dev
+    image: adameds/inventory:dev
     container_name: adameds-inventory
     ports:
       - 8088:8088
