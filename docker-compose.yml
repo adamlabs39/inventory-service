@@ -15,7 +15,6 @@ services:
       DOTENV_KEY: ${DOTENV_KEY}
       API_BASE: ${API_BASE}
       API_VERSION: ${API_VERSION}
-      BASE_URL: ${BASE_URL}
     volumes:
       - type: bind
         source: /home/admin/adameds/.env.vault
