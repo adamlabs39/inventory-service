@@ -5,6 +5,7 @@ import {
   PembelianBarangSupplierModel,
   PembelianBarangSupplierItemModel,
   MasterSupplierModel,
+  StockMedisModel,
 } from "@adameds/model-sdk/inventory";
 import { ConversionModel } from "@adameds/model-sdk/farmasi";
 
@@ -25,7 +26,7 @@ PembelianBarangSupplierItemModel.belongsTo(ConversionModel, {
   constraints: false,
 });
 
-export default class PengadaanBarangRepository {
+export default class InventoryBarangRepository {
   static async createPembelianBarang(req, transaction) {
     return await PembelianBarangSupplierModel.create(req, { transaction });
   }
@@ -40,6 +41,41 @@ export default class PengadaanBarangRepository {
       code: req.code,
       name: req.name,
       status: req.status,
+    });
+  }
+
+  static async getDataPurchaseOrder(req) {
+    return await PembelianBarangSupplierModel.findOne({
+      where: {
+        uuid: req.uuid,
+        deleted_at: {
+          [Op.is]: null,
+        },
+      },
+      attributes: {
+        exclude: [
+          "deleted_at",
+          "created_at",
+          "updated_at",
+          "faskes_uuid",
+          "no_surat_jalan",
+        ],
+      },
+      include: [
+        {
+          model: PembelianBarangSupplierItemModel,
+          as: "pbsu",
+          required: false,
+          where: {
+            deleted_at: {
+              [Op.is]: null,
+            },
+          },
+          attributes: {
+            exclude: ["deleted_at", "created_at", "updated_at", "faskes_uuid"],
+          },
+        },
+      ],
     });
   }
 
@@ -119,6 +155,33 @@ export default class PengadaanBarangRepository {
     );
   }
 
+  static async updateVerifikasi(req) {
+    return await PembelianBarangSupplierModel.update(
+      {
+        status: "verifikasi",
+      },
+      {
+        where: {
+          uuid: req.uuid,
+        },
+      }
+    );
+  }
+
+  static async updateDiterima(req) {
+    return await PembelianBarangSupplierModel.update(
+      {
+        status: "diterima",
+        alasan_batal: req.alasan_batal,
+      },
+      {
+        where: {
+          uuid: req.uuid,
+        },
+      }
+    );
+  }
+
   static async updatePurchaseOrder(req, transaction) {
     return await PembelianBarangSupplierModel.update(req, {
       where: {
@@ -137,6 +200,12 @@ export default class PengadaanBarangRepository {
     });
   }
 
+  static async bulkCreateStokMedis(req, transaction) {
+    return await StockMedisModel.bulkCreate(req, {
+      transaction,
+    });
+  }
+
   static async delete(req) {
     return await PembelianBarangSupplierModel.update(
       {
@@ -148,5 +217,25 @@ export default class PengadaanBarangRepository {
         },
       }
     );
+  }
+
+  // edit alkes item
+  static async editAlkesItem(req, transaction) {
+    if (!transaction) {
+      transaction = await sequelizeInstance.transaction();
+    }
+
+    const affectedRow = await OrderAlkesItemModel.update(req, {
+      where: {
+        uuid: req.uuid,
+      },
+      transaction: transaction,
+    });
+
+    if (affectedRow[0] === 0) {
+      throw new InternalServerException("Tidak ada data yang diubah");
+    }
+
+    return affectedRow;
   }
 }

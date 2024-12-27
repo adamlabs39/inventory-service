@@ -5,7 +5,7 @@ import InternalServerException from "../errors/internal-server-exception.js";
 
 import Utils from "../helpers/utils.js";
 import { uuidv7 } from "uuidv7";
-import PengadaanBarangRepository from "../repositories/pengadaan-barang-repository.js";
+import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 
 export default class PengadaanBarangService {
   static async orderBarang(req) {
@@ -53,7 +53,7 @@ export default class PengadaanBarangService {
         ongkos_kirim: req.ongkos_kirim,
       };
       const order_pengadaan_barang =
-        await PengadaanBarangRepository.createPembelianBarang(
+        await InventoryBarangRepository.createPembelianBarang(
           dataPembelianBarang,
           transaction
         );
@@ -70,7 +70,7 @@ export default class PengadaanBarangService {
 
         delete item.name;
         const data_pembelian_item =
-          await PengadaanBarangRepository.createPembelianBarangItem(
+          await InventoryBarangRepository.createPembelianBarangItem(
             item,
             transaction
           );
@@ -90,12 +90,12 @@ export default class PengadaanBarangService {
 
   static async getAll(req) {
     ZodValidator.validate(InventoryValidation.GET_FILTER, req);
-    return await PengadaanBarangRepository.getAll(req);
+    return await InventoryBarangRepository.getAll(req);
   }
 
   static cancelPembelianBarang(req) {
     ZodValidator.validate(InventoryValidation.DATA_SATUAN, req);
-    return PengadaanBarangRepository.update(req);
+    return InventoryBarangRepository.update(req);
   }
 
   static async update(req) {
@@ -103,7 +103,7 @@ export default class PengadaanBarangService {
     const tr = await sequelizeInstance.transaction();
 
     try {
-      const purchaseOrder = await PengadaanBarangRepository.updatePurchaseOrder(
+      const purchaseOrder = await InventoryBarangRepository.updatePurchaseOrder(
         req,
         tr
       );
@@ -136,15 +136,13 @@ export default class PengadaanBarangService {
           }));
 
         if (newItem.length > 0) {
-          console.log("new_item", newItem);
-
-          await PengadaanBarangRepository.bulkCreate(newItem, tr);
+          await InventoryBarangRepository.bulkCreate(newItem, tr);
         }
 
         if (updatedItem.length > 0) {
           await Promise.all(
             updatedItem.map((item) =>
-              PengadaanBarangRepository.updatePurchaseOrderItems(item, tr)
+              InventoryBarangRepository.updatePurchaseOrderItems(item, tr)
             )
           );
         }
@@ -152,7 +150,7 @@ export default class PengadaanBarangService {
         if (deletedItem.length > 0) {
           await Promise.all(
             deletedItem.map((item) =>
-              PengadaanBarangRepository.delete(item, tr)
+              InventoryBarangRepository.delete(item, tr)
             )
           );
         }
@@ -161,7 +159,7 @@ export default class PengadaanBarangService {
       await tr.commit();
       return purchaseOrder;
     } catch (e) {
-      console.log("errorss", e);
+      console.log("errorss_edit_pengadaan_barang", e);
 
       await tr.rollback();
       throw new InternalServerException(e.message);

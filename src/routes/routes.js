@@ -1,7 +1,8 @@
 import express from "express";
-import DatamasterIngredientController from "../controllers/datamaster-ingredient-controller.js";
 import DatamasterSupplierController from "../controllers/datamaster-supplier-controller.js";
 import PengadaanBarangController from "../controllers/pengadaan-barang-controller.js";
+import VerifikasiBarangController from "../controllers/verifikasi-barang-controller.js";
+import PenerimaanBarangController from "../controllers/penerimaan-barang-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -55,6 +56,14 @@ routes.put(
 routes.delete(
   `${baseUrl}/pengadaan/pembelian-barang/:uuid`,
   PengadaanBarangController.delete
+);
+routes.put(
+  `${baseUrl}/pengadaan/verifikasi-barang/:uuid`,
+  VerifikasiBarangController.verifikasiPembelianBarang
+);
+routes.put(
+  `${baseUrl}/pengadaan/penerimaan-barang/:uuid`,
+  PenerimaanBarangController.createPenerimaan
 );
 
 export default routes;
