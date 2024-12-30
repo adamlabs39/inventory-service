@@ -3,6 +3,7 @@ import DatamasterSupplierController from "../controllers/datamaster-supplier-con
 import PengadaanBarangController from "../controllers/pengadaan-barang-controller.js";
 import VerifikasiBarangController from "../controllers/verifikasi-barang-controller.js";
 import PenerimaanBarangController from "../controllers/penerimaan-barang-controller.js";
+import PermintaanUnitController from "../controllers/permintaan-unit-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -64,6 +65,12 @@ routes.put(
 routes.put(
   `${baseUrl}/pengadaan/penerimaan-barang/:uuid`,
   PenerimaanBarangController.createPenerimaan
+);
+
+// PERMINTAAN BARANG UNIT
+routes.get(
+  `${baseUrl}/pengiriman-unit`,
+  PermintaanUnitController.getAll
 );
 
 export default routes;
