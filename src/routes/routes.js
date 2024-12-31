@@ -76,5 +76,9 @@ routes.get(
     `${baseUrl}/pengiriman-unit/:uuid`,
     PermintaanUnitController.getDetail
 );
+routes.put(
+    `${baseUrl}/pengiriman-unit/batal/:uuid`,
+    PermintaanUnitController.tolakPermintaan
+);
 
 export default routes;

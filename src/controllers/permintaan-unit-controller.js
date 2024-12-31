@@ -21,4 +21,15 @@ export default class PermintaanUnitController {
             nextFunction(error);
         }
     }
+
+    static async tolakPermintaan(req, res, nextFunction) {
+        try {
+            req.body.petugas_batal_tolak = req.author.username;
+            req.body.uuid = req.params.uuid;
+            await PermintaanUnitService.tolakPermintaan(req.body);
+            res.status(201).json(successResponse("data berhasil diupdate"));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
 }

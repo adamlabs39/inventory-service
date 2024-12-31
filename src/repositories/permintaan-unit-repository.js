@@ -3,6 +3,7 @@ import {Op} from "sequelize";
 import sequelizeInstance from "@adameds/model-sdk/instance";
 import {ConversionModel, ItemMedisModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
 import Pagination from "../helpers/pagination.js";
+import {toEpochDate} from "../helpers/date-helper.js";
 
 export default class PermintaanUnitRepository {
     static async getAll(req) {
@@ -83,5 +84,17 @@ export default class PermintaanUnitRepository {
                 }
             ]
         })
+    }
+
+    static async update(req, transaction){
+        return await PermintaanUnitModel.update(
+            req,
+            {
+                where: {
+                    uuid: req.uuid
+                },
+                transaction
+            }
+        )
     }
 }

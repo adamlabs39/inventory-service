@@ -44,4 +44,9 @@ export default class PermintaanUnitService {
             throw new BadRequestException({message: "Data tidak ditemukan"});
         }
     }
+
+    static async tolakPermintaan(req){
+        ZodValidator.validate(PermintaanUnitValidation.TOLAK_PERMINTAAN, req);
+        return await PermintaanUnitRepository.update(req);
+    }
 }
