@@ -31,27 +31,30 @@ export default class PenerimaanUnitSeeder {
                 "uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "permintaan_unit_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "item_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
-                "qty" : 10,
+                "qty_permintaan" : 10,
                 "konversi_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "kategori_item" : "medis",
+                "stok_awal_lokasi_penerima" : 10,
             },
             {
                 "faskes_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "uuid": "0192b31f-365d-731c-8b16-3a4565c9475r",
                 "permintaan_unit_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "item_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
-                "qty" : 10,
+                "qty_permintaan" : 10,
                 "konversi_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "kategori_item" : "medis",
+                "stok_awal_lokasi_penerima" : 10,
             },
             {
                 "faskes_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "uuid": "0192b31f-365d-731c-8b16-3a4565c9475t",
                 "permintaan_unit_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "item_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
-                "qty" : 10,
+                "qty_permintaan" : 10,
                 "konversi_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "kategori_item" : "medis",
+                "stok_awal_lokasi_penerima" : 10,
             }
         ]
 

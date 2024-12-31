@@ -11,4 +11,14 @@ export default class PermintaanUnitController {
             nextFunction(error);
         }
     }
+
+    static async getDetail(req, res, nextFunction) {
+        try {
+            req.query.uuid = req.params.uuid;
+            const data = await PermintaanUnitService.getDetail(req.query);
+            res.status(201).json(successResponse("data berhasil didapat", data));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
 }

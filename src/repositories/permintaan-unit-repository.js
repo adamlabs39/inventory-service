@@ -1,7 +1,7 @@
-import {PermintaanUnitModel} from "@adameds/model-sdk/inventory";
+import {PermintaanUnitItemModel, PermintaanUnitModel} from "@adameds/model-sdk/inventory";
 import {Op} from "sequelize";
 import sequelizeInstance from "@adameds/model-sdk/instance";
-import {LokasiStokModel} from "@adameds/model-sdk/farmasi";
+import {ConversionModel, ItemMedisModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
 import Pagination from "../helpers/pagination.js";
 
 export default class PermintaanUnitRepository {
@@ -10,7 +10,7 @@ export default class PermintaanUnitRepository {
             where: {
                 deleted_at: null,
                 faskes_uuid: req.faskes_uuid,
-                status: req.status ?? undefined,
+                status: {[Op.in]: req.status},
                 [Op.or]: [
                     {no_permintaan: {[Op.iLike]: `%${req.search}%`}},
                     sequelizeInstance.where(
@@ -43,5 +43,45 @@ export default class PermintaanUnitRepository {
         }
 
         return await Pagination.init(PermintaanUnitModel, req, option);
+    }
+
+    static async getDetail(req){
+        return await PermintaanUnitModel.findOne({
+            where: {
+                uuid: req.uuid,
+                deleted_at: null,
+            },
+            attributes : {
+                exclude: ['deleted_at', 'created_at', 'updated_at', 'faskes_uuid']
+            },
+            include: [
+                {
+                    model: LokasiStokModel,
+                    as: 'lokasi_stok_tujuan',
+                    required: false,
+                    attributes: ['name']
+                },
+                {
+                    model : PermintaanUnitItemModel,
+                    as : 'items',
+                    required : false,
+                    attributes : ['qty_permintaan', 'qty_pengiriman', 'stok_awal_lokasi_penerima'],
+                    include : [
+                        {
+                            model : ItemMedisModel,
+                            as : 'item_medis',
+                            required : false,
+                            attributes: ['name']
+                        },
+                        {
+                            model : ConversionModel,
+                            as : 'konversi',
+                            required : false,
+                            attributes : ['konversi', 'satuan_pembelian', 'satuan_penggunaan'],
+                        }
+                    ]
+                }
+            ]
+        })
     }
 }

@@ -72,5 +72,9 @@ routes.get(
   `${baseUrl}/pengiriman-unit`,
   PermintaanUnitController.getAll
 );
+routes.get(
+    `${baseUrl}/pengiriman-unit/:uuid`,
+    PermintaanUnitController.getDetail
+);
 
 export default routes;
