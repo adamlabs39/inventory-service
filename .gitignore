@@ -6,3 +6,4 @@ public.key
 /node_modules
 *.key
 package-lock.json
+._.*
