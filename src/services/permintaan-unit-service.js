@@ -2,6 +2,9 @@ import ZodValidator from "../validations/zod-validator.js";
 import PermintaanUnitValidation from "../validations/permintaan-unit-validation.js";
 import PermintaanUnitRepository from "../repositories/permintaan-unit-repository.js";
 import BadRequestException from "../errors/bad-request-exception.js";
+import sequelizeInstance from "../configurations/sequelize-instance.js";
+import PermintaanUnitItemRepository from "../repositories/permintaan-unit-item-repository.js";
+import {uuidv7} from "uuidv7";
 
 export default class PermintaanUnitService {
     static async getAll(req) {
@@ -26,11 +29,11 @@ export default class PermintaanUnitService {
         }
     }
 
-    static async getDetail(req){
+    static async getDetail(req) {
         ZodValidator.validate(PermintaanUnitValidation.GET_DETAIL, req);
         const result = await PermintaanUnitRepository.getDetail(req);
 
-        if(result){
+        if (result) {
             result.lokasi_stok_tujuan = result.lokasi_stok_tujuan?.name;
 
             result.items.forEach((item) => {
@@ -45,8 +48,82 @@ export default class PermintaanUnitService {
         }
     }
 
-    static async tolakPermintaan(req){
+    static async tolakPermintaan(req) {
         ZodValidator.validate(PermintaanUnitValidation.TOLAK_PERMINTAAN, req);
         return await PermintaanUnitRepository.update(req);
+    }
+
+    static async verifikasiPermintaan(req) {
+        ZodValidator.validate(PermintaanUnitValidation.VERIFIKASI_PERMINTAAN, req);
+
+        const transaction = await sequelizeInstance.transaction();
+
+        const permintaan = await PermintaanUnitRepository.getDetail({uuid: req.uuid});
+        const nonUsedItems = [];
+        const halfUsedItems = [];
+        const usedItems = [];
+
+        permintaan.items.foreach((item) => {
+            const selectedItem = req.item.find((sel) => sel.id === item.id);
+
+            if (!selectedItem) {
+                nonUsedItems.push({...item});
+            } else {
+                if (selectedItem.quantity < item.quantity) {
+                    const remainingQuantity = item.quantity - selectedItem.quantity;
+                    halfUsedItems.push({...item, remainingQty: remainingQuantity, qty_permintaan : selectedItem.quantity});
+                } else {
+                    usedItems.push({...item, qty_pengiriman: selectedItem.quantity});
+                }
+            }
+        });
+
+        try {
+            // UPDATE PERMINTAAN
+            await PermintaanUnitRepository.update({
+                uuid: req.uuid,
+                status:
+                    nonUsedItems.length === 0 && halfUsedItems.length === 0 ?
+                        "verified" : "verif_sebagian",
+                petugas_verifikasi: req.petugas_verifikasi,
+                total_item: usedItems.length,
+            }, transaction);
+
+            // UPDATE CURRENT ITEMS
+            for (const item of halfUsedItems) {
+                await PermintaanUnitItemRepository.update({
+                    uuid: item.uuid,
+                    qty_pengiriman: item.qty_pengiriman,
+                }, transaction);
+            }
+
+            // CREATE NEW PERMINTAAN & DELETE NON USED ITEMS IN CURRENT PERMINTAAN
+            const newPermintaan = permintaan.dataValues;
+            newPermintaan.uuid = uuidv7();
+
+            await PermintaanUnitRepository.create(newPermintaan, transaction);
+
+            for (const item of nonUsedItems) {
+                await PermintaanUnitItemRepository.update({
+                    uuid: item.uuid,
+                    permintaan_unit_uuid: newPermintaan.uuid ,
+                }, transaction);
+            }
+
+            for (const item of halfUsedItems) {
+                await PermintaanUnitItemRepository.create({
+                    ...item,
+                    uuid: uuidv7(),
+                    qty_permintaan: item.remainingQty,
+                }, transaction);
+            }
+
+            // TODO : REDUCE MEDICAL STOCKS
+
+            await transaction.commit();
+        } catch (e) {
+            await transaction.rollback();
+            throw new BadRequestException({message: e.message});
+        }
     }
 }

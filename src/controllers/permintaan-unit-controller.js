@@ -32,4 +32,15 @@ export default class PermintaanUnitController {
             nextFunction(error);
         }
     }
+
+    static async verifikasiPermintaan(req, res, nextFunction) {
+        try {
+            req.body.petugas_verifikasi = req.author.username;
+            req.body.uuid = req.params.uuid;
+            await PermintaanUnitService.verifikasiPermintaan(req.body);
+            res.status(201).json(successResponse("data berhasil diupdate"));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
 }

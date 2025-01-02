@@ -18,7 +18,8 @@ export default class PermintaanUnitRepository {
                         sequelizeInstance.col('lokasi_stok_tujuan.name'),
                         {[Op.iLike]: `%${req.search || ''}%`}
                     )
-                ]
+                ],
+                lokasi_stok_awal_uuid : req.lokasi_gudang_uuid,
             },
             attributes: [
                 'uuid',
@@ -66,7 +67,6 @@ export default class PermintaanUnitRepository {
                     model : PermintaanUnitItemModel,
                     as : 'items',
                     required : false,
-                    attributes : ['qty_permintaan', 'qty_pengiriman', 'stok_awal_lokasi_penerima'],
                     include : [
                         {
                             model : ItemMedisModel,
@@ -87,12 +87,29 @@ export default class PermintaanUnitRepository {
     }
 
     static async update(req, transaction){
+        if (!transaction) {
+            transaction = await sequelizeInstance.transaction();
+        }
+
         return await PermintaanUnitModel.update(
             req,
             {
                 where: {
                     uuid: req.uuid
                 },
+                transaction
+            }
+        )
+    }
+
+    static async create(req, transaction){
+        if (!transaction) {
+            transaction = await sequelizeInstance.transaction();
+        }
+
+        return await PermintaanUnitModel.create(
+            req,
+            {
                 transaction
             }
         )

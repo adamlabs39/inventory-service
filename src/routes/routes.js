@@ -80,5 +80,9 @@ routes.put(
     `${baseUrl}/pengiriman-unit/batal/:uuid`,
     PermintaanUnitController.tolakPermintaan
 );
+routes.put(
+    `${baseUrl}/pengiriman-unit/verifikasi/:uuid`,
+    PermintaanUnitController.verifikasiPermintaan
+);
 
 export default routes;
