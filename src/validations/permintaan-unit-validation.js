@@ -27,4 +27,9 @@ export default class PermintaanUnitValidation {
         }),
         petugas_verifikasi: z.string().min(1, required)
     })
+
+    static KIRIM_PERMINTAAN = z.object({
+        uuid: z.string().min(1, required),
+        petugas_kirim: z.string().min(1, required)
+    })
 }
