@@ -43,4 +43,15 @@ export default class PermintaanUnitController {
             nextFunction(error);
         }
     }
+
+    static async kirimPermintaan(req, res, nextFunction) {
+        try {
+            req.body.petugas_kirim = req.author.username;
+            req.body.uuid = req.params.uuid;
+            await PermintaanUnitService.kirimPermintaan(req.body);
+            res.status(201).json(successResponse("data berhasil diupdate"));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
 }

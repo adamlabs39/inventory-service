@@ -109,4 +109,45 @@ export default class StockMedisRepository {
             transaction
         });
     }
+
+    static async create(req, transaction){
+        if (!transaction) {
+            transaction = await sequelizeInstance.transaction();
+        }
+
+        return await StockMedisModel.create(req, {
+            transaction
+        });
+    }
+
+    static async bulkCreate(req, transaction){
+        if (!transaction) {
+            transaction = await sequelizeInstance.transaction();
+        }
+
+        return await StockMedisModel.bulkCreate(req, {
+            transaction
+        });
+    }
+
+    static async getSome(req){
+        const result = await StockMedisModel.findAll({
+            where: {
+                uuid: req.uuids
+            },
+            attributes: {
+                exclude: [
+                  "deleted_at",
+                  "created_at",
+                  "updated_at",
+                ],
+              },
+        });
+
+        if (!result) {
+            throw new BadRequestException({message: "Data tidak ditemukan"});
+        }
+
+        return result;
+    }
 }

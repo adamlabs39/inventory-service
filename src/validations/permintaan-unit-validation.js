@@ -25,7 +25,8 @@ export default class PermintaanUnitValidation {
             quantity: z.number().min(1, {message: "jumlah pengiriman harus lebih dari 0",
             })
         }),
-        petugas_verifikasi: z.string().min(1, required)
+        petugas_verifikasi: z.string().min(1, required),
+        faskes_uuid: z.string().min(1, required)
     })
 
     static KIRIM_PERMINTAAN = z.object({

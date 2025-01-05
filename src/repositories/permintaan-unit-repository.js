@@ -3,7 +3,7 @@ import {Op} from "sequelize";
 import sequelizeInstance from "@adameds/model-sdk/instance";
 import {ConversionModel, ItemMedisModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
 import Pagination from "../helpers/pagination.js";
-import {toEpochDate} from "../helpers/date-helper.js";
+import BadRequestException from "../errors/bad-request-exception.js";
 
 export default class PermintaanUnitRepository {
     static async getAll(req) {
@@ -48,7 +48,7 @@ export default class PermintaanUnitRepository {
     }
 
     static async getDetail(req){
-        return await PermintaanUnitModel.findOne({
+        const result = await PermintaanUnitModel.findOne({
             where: {
                 uuid: req.uuid,
                 deleted_at: null,
@@ -84,6 +84,12 @@ export default class PermintaanUnitRepository {
                 }
             ]
         })
+
+        if (!result) {
+            throw new BadRequestException({message: "Data tidak ditemukan"});
+        }
+
+        return result;
     }
 
     static async update(req, transaction){
