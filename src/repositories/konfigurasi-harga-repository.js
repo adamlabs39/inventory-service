@@ -1,5 +1,5 @@
 import { KonfigurasiHargaModel } from "@adameds/model-sdk/farmasi";
-import BadRequestException from "../errors/bad-request-exception";
+import BadRequestException from "../errors/bad-request-exception.js";
 
 export default class KonfigurasiHargaRepository {
     static async get(faskes_uuid) {

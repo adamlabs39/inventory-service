@@ -37,6 +37,7 @@ export default class PermintaanUnitController {
         try {
             req.body.petugas_verifikasi = req.author.username;
             req.body.uuid = req.params.uuid;
+            req.body.faskes_uuid = req.author.faskesUuid;
             await PermintaanUnitService.verifikasiPermintaan(req.body);
             res.status(201).json(successResponse("data berhasil diupdate"));
         } catch (error) {
@@ -48,6 +49,7 @@ export default class PermintaanUnitController {
         try {
             req.body.petugas_kirim = req.author.username;
             req.body.uuid = req.params.uuid;
+            req.body.faskes_uuid = req.author.faskesUuid;
             await PermintaanUnitService.kirimPermintaan(req.body);
             res.status(201).json(successResponse("data berhasil diupdate"));
         } catch (error) {

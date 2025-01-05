@@ -68,25 +68,10 @@ routes.put(
 );
 
 // PERMINTAAN BARANG UNIT
-routes.get(
-  `${baseUrl}/pengiriman-unit`,
-  PermintaanUnitController.getAll
-);
-routes.get(
-    `${baseUrl}/pengiriman-unit/:uuid`,
-    PermintaanUnitController.getDetail
-);
-routes.put(
-    `${baseUrl}/pengiriman-unit/batal/:uuid`,
-    PermintaanUnitController.tolakPermintaan
-);
-routes.put(
-    `${baseUrl}/pengiriman-unit/verifikasi/:uuid`,
-    PermintaanUnitController.verifikasiPermintaan
-);
-routes.put(
-    `${baseUrl}/pengiriman-unit/kirim/:uuid`,
-    PermintaanUnitController.kirimPermintaan
-);
+routes.get(`${baseUrl}/pengiriman-unit`,PermintaanUnitController.getAll);
+routes.get(`${baseUrl}/pengiriman-unit/:uuid`,PermintaanUnitController.getDetail);
+routes.put(`${baseUrl}/pengiriman-unit/batal/:uuid`,PermintaanUnitController.tolakPermintaan);
+routes.put(`${baseUrl}/pengiriman-unit/verifikasi/:uuid`,PermintaanUnitController.verifikasiPermintaan);
+routes.put(`${baseUrl}/pengiriman-unit/kirim/:uuid`,PermintaanUnitController.kirimPermintaan);
 
 export default routes;

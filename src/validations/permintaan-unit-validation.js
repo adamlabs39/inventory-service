@@ -20,17 +20,18 @@ export default class PermintaanUnitValidation {
 
     static VERIFIKASI_PERMINTAAN = z.object({
         uuid: z.string().min(1, required),
-        item : z.object({
+        item : z.array(z.object({
             uuid: z.string().min(1, required),
             quantity: z.number().min(1, {message: "jumlah pengiriman harus lebih dari 0",
             })
-        }),
+        }), required),
         petugas_verifikasi: z.string().min(1, required),
         faskes_uuid: z.string().min(1, required)
     })
 
     static KIRIM_PERMINTAAN = z.object({
         uuid: z.string().min(1, required),
-        petugas_kirim: z.string().min(1, required)
+        petugas_kirim: z.string().min(1, required),
+        faskes_uuid: z.string().min(1, required)
     })
 }

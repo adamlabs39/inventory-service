@@ -54,7 +54,7 @@ export default class PermintaanUnitRepository {
                 deleted_at: null,
             },
             attributes : {
-                exclude: ['deleted_at', 'created_at', 'updated_at', 'faskes_uuid']
+                exclude: ['deleted_at', 'created_at', 'updated_at', 'id']
             },
             include: [
                 {
@@ -86,17 +86,13 @@ export default class PermintaanUnitRepository {
         })
 
         if (!result) {
-            throw new BadRequestException({message: "Data tidak ditemukan"});
+            throw new BadRequestException( "Data tidak ditemukan");
         }
 
         return result;
     }
 
     static async update(req, transaction){
-        if (!transaction) {
-            transaction = await sequelizeInstance.transaction();
-        }
-
         return await PermintaanUnitModel.update(
             req,
             {
@@ -109,10 +105,6 @@ export default class PermintaanUnitRepository {
     }
 
     static async create(req, transaction){
-        if (!transaction) {
-            transaction = await sequelizeInstance.transaction();
-        }
-
         return await PermintaanUnitModel.create(
             req,
             {

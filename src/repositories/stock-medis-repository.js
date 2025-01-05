@@ -111,29 +111,21 @@ export default class StockMedisRepository {
     }
 
     static async create(req, transaction){
-        if (!transaction) {
-            transaction = await sequelizeInstance.transaction();
-        }
-
         return await StockMedisModel.create(req, {
             transaction
         });
     }
 
     static async bulkCreate(req, transaction){
-        if (!transaction) {
-            transaction = await sequelizeInstance.transaction();
-        }
-
         return await StockMedisModel.bulkCreate(req, {
             transaction
         });
     }
 
-    static async getSome(req){
+    static async getSome(uuids){
         const result = await StockMedisModel.findAll({
             where: {
-                uuid: req.uuids
+                uuid: uuids
             },
             attributes: {
                 exclude: [

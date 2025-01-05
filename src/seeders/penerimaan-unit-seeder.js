@@ -14,6 +14,7 @@ export default class PenerimaanUnitSeeder {
                 "jenis_stok" : "obat",
                 "jenis_item" : "obat",
                 "lokasi_stok_tujuan_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
+                "lokasi_stok_awal_uuid" : "0192b31f-365d-731c-8b16-3a4565c9475e",
                 "catatan" : "Permintaan obat",
                 "cito" : false,
                 "total_item" : 10,
