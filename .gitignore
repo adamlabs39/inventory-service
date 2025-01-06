@@ -6,3 +6,5 @@ public.key
 /node_modules
 *.key
 package-lock.json
+._.*
+eslint.config.js

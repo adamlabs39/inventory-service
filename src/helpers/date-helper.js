@@ -1,5 +1,7 @@
+import moment from "moment";
+
 const toEpochDate = (date) => {
-  return Math.floor(date.getTime());
+  return moment(date).unix();
 };
 
 export {toEpochDate}
