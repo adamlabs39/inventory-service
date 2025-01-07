@@ -26,18 +26,18 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(authorizationSdk([]));
+app.use(authorizationSdk([]));
 app.use(routes);
 app.use(errorMiddleware);
 app.listen(APPLICATION_PORT, APPLICATION_HOST, async () => {
-  try {
-    // for (const model of MODELMERGE) {
-    //   await model.sync({ alter: false, force: true });
-    // }
-    // await dbSeeder();
-  } catch (error) {
-    console.error("Failed to synchronize the database:", error);
-  }
+    try {
+        // for (const model of MODELMERGE) {
+        //     await model.sync({alter: false, force: true});
+        // }
+        // await dbSeeder();
+    } catch (error) {
+        console.error("Failed to synchronize the database:", error);
+    }
 
   console.log(
     `Server running on http://${APPLICATION_HOST}:${APPLICATION_PORT}`

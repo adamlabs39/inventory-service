@@ -176,10 +176,6 @@ export default class AlkesRepository {
 
     // edit alkes item
     static async editAlkesItem(req, transaction) {
-        if (!transaction){
-            transaction = await sequelizeInstance.transaction();
-        }
-
         const affectedRow = await OrderAlkesItemModel.update(
             req,
             {

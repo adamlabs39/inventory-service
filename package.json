@@ -11,15 +11,21 @@
   },
   "dependencies": {
     "@adameds/authorization-sdk": "^1.0.5",
-    "@adameds/model-sdk": "^1.0.40",
+    "@adameds/model-sdk": "^1.0.51",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
+    "nodemon": "^3.1.9",
     "sequelize": "^6.37.5",
     "uuidv7": "^1.0.2",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0"
   }
 }
