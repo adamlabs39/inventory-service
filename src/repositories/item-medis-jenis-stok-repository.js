@@ -83,4 +83,51 @@ export default class ItemMedisJenisStokRepository {
 
         return await Pagination.init(ItemMedisJenisStokModel, req, option);
     }
+
+    static async getDetailForStokAdjustment(req) {
+        return await ItemMedisJenisStokModel.findOne({
+            where: {
+                uuid: req.uuid
+            },
+            attributes: ['uuid'],
+            include: [
+                {
+                    model: ItemMedisModel,
+                    as: 'item_medis',
+                    required: true,
+                    attributes: ['uuid', 'name', 'jenis_item'],
+                    [Op.or]: [
+                        {name: {[Op.iLike]: `%${req.search}%`}},
+                        {code: {[Op.iLike]: `%${req.search}%`}},
+                    ],
+                    include: [
+                        {
+                            model: KategoriObatModel,
+                            as: 'kategori_obat',
+                            required: true,
+                            attributes: ['name']
+                        }
+                    ]
+                },
+                {
+                    model: JenisStokModel,
+                    as: 'detail_stok',
+                    required: true,
+                    attributes: ['uuid', 'name'],
+                },
+                {
+                    model: StockMedisModel,
+                    as: 'stocks',
+                    required: true,
+                    attributes: ['uuid', 'sisa_stok', 'exp_date'],
+                    where: {
+                        sisa_stok: {
+                            [Op.gt]: 0
+                        },
+                        lokasi_stok_uuid: req.lokasi_stok_uuid,
+                    }
+                }
+            ]
+        });
+    }
 }

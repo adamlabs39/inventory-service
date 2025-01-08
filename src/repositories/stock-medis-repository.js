@@ -238,4 +238,18 @@ export default class StockMedisRepository {
 
         return result;
     }
+
+    static async update(req) {
+        const result = await StockMedisModel.update(req, {
+            where: {
+                uuid: req.uuid
+            }
+        });
+
+        if (result[0] === 0) {
+            throw new BadRequestException("Data tidak ditemukan");
+        }
+
+        return result;
+    }
 }
