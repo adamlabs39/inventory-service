@@ -1,5 +1,11 @@
 import {PengeluaranUnitItemModel, PengeluaranUnitModel, StockMedisModel} from "@adameds/model-sdk/inventory";
-import {ConversionModel, ItemMedisModel, JenisStokModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
+import {
+    ConversionModel,
+    ItemMedisJenisStokModel,
+    ItemMedisModel,
+    JenisStokModel,
+    LokasiStokModel
+} from "@adameds/model-sdk/farmasi";
 import {Op} from "sequelize";
 import Pagination from "../helpers/pagination.js";
 
@@ -69,13 +75,21 @@ export default class PengeluaranUnitRepository {
                             model: StockMedisModel,
                             as: 'stok',
                             required: false,
-                            attributes: [],
+                            attributes: ["uuid"],
                             include: [
                                 {
-                                    model: ItemMedisModel,
-                                    as: 'item_medis',
-                                    required: false,
-                                    attributes: ['name'],
+                                    model: ItemMedisJenisStokModel,
+                                    as: 'item_medis_jenis_stok',
+                                    required: true,
+                                    attributes: ['uuid'],
+                                    include: [
+                                        {
+                                            model: ItemMedisModel,
+                                            as: 'item_medis',
+                                            required: false,
+                                            attributes: ['name']
+                                        },
+                                    ]
                                 }
                             ]
                         },
@@ -84,7 +98,7 @@ export default class PengeluaranUnitRepository {
                             as: 'konversi',
                             required: false,
                             attributes: ['konversi', 'satuan_penggunaan'],
-                        }
+                        },
                     ]
                 }
 

@@ -105,11 +105,11 @@ export default class PengeluaranUnitService {
 
         return data.map((item) => {
             return {
-                name: item.dataValues.item_medis?.name,
-                uuid: item.dataValues.item_medis?.uuid,
-                sisa_stok: item.dataValues.sisa_stok,
-                harga_satuan: item.dataValues.harga_satuan,
-                exp_date: item.dataValues.exp_date
+                name: item.item_medis_jenis_stok?.item_medis?.name,
+                uuid: item.item_medis_jenis_stok?.item_medis?.uuid,
+                sisa_stok: item.sisa_stok,
+                harga_satuan: item.harga_satuan,
+                exp_date: item.exp_date
             }
         });
     }
@@ -151,7 +151,7 @@ export default class PengeluaranUnitService {
 
         data.dataValues.items = data.items.map((item) => {
             return {
-                name: item.stok?.item_medis?.name,
+                name: item.stok?.item_medis_jenis_stok?.item_medis?.name,
                 qty: item.qty,
                 harga_satuan: item.harga_satuan,
                 total_harga: item.qty * item.harga_satuan,

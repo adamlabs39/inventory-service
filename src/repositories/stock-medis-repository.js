@@ -1,8 +1,7 @@
 import {Op} from "sequelize";
-import sequelizeInstance from "../configurations/sequelize-instance.js";
 import BadRequestException from "../errors/bad-request-exception.js";
 import {StockMedisModel} from "@adameds/model-sdk/inventory";
-import {ItemMedisJenisStokModel, ItemMedisModel} from "@adameds/model-sdk/farmasi";
+import {ItemMedisJenisStokModel, ItemMedisModel, JenisStokModel} from "@adameds/model-sdk/farmasi";
 
 export default class StockMedisRepository {
     static async reduceQuantity(req, t) {
@@ -203,20 +202,33 @@ export default class StockMedisRepository {
                 exp_date: {
                     [Op.gt]: new Date(req.tanggal_pengeluaran)
                 },
-                jenis_stok_uuid: req.jenis_stok_uuid,
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
             },
             attributes: ["exp_date", "sisa_stok", "harga_satuan"],
             include: [
                 {
-                    model: ItemMedisModel,
-                    as: "item_medis",
+                    model: ItemMedisJenisStokModel,
+                    as: 'item_medis_jenis_stok',
                     required: true,
-                    where: {
-                        jenis_item: req.jenis_item,
-                    },
-                    attributes: ["name", "uuid"]
-                },
+                    attributes: ['uuid'],
+                    include: [
+                        {
+                            model: JenisStokModel,
+                            as: 'detail_stok',
+                            required: true,
+                            attributes: ['name'],
+                            where: {
+                                uuid: req.jenis_stok_uuid
+                            }
+                        },
+                        {
+                            model: ItemMedisModel,
+                            as: 'item_medis',
+                            required: true,
+                            attributes: ['name', 'uuid'],
+                        }
+                    ],
+                }
             ]
         });
 
