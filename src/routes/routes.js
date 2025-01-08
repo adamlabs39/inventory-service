@@ -5,6 +5,7 @@ import VerifikasiBarangController from "../controllers/verifikasi-barang-control
 import PenerimaanBarangController from "../controllers/penerimaan-barang-controller.js";
 import PermintaanUnitController from "../controllers/permintaan-unit-controller.js";
 import PengeluaranUnitController from "../controllers/pengeluaran-unit-controller.js";
+import KartuStokController from "../controllers/kartu-stok-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -81,4 +82,6 @@ routes.post(`${baseUrl}/pengeluaran-unit`, PengeluaranUnitController.create);
 routes.get(`${baseUrl}/pengeluaran-unit`, PengeluaranUnitController.getAll);
 routes.get(`${baseUrl}/pengeluaran-unit/:uuid`, PengeluaranUnitController.getDetail);
 
+// KARTU STOK
+routes.get(`${baseUrl}/kartu-stok`, KartuStokController.getAll);
 export default routes;
