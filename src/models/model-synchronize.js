@@ -3,7 +3,7 @@ import {
     PembelianBarangSupplierModel, PengeluaranUnitItemModel,
     PengeluaranUnitModel,
     PermintaanUnitItemModel,
-    PermintaanUnitModel, RiwatatMutasiModel,
+    PermintaanUnitModel, RiwatatMutasiModel, StokOpnameItemModel, StokOpnameModel,
 } from "@adameds/model-sdk/inventory";
 
 const MODELMERGE = [
@@ -13,7 +13,9 @@ const MODELMERGE = [
     PermintaanUnitItemModel,
     PengeluaranUnitModel,
     PengeluaranUnitItemModel,
-    RiwatatMutasiModel
+    RiwatatMutasiModel,
+    StokOpnameModel,
+    StokOpnameItemModel
 ];
 
 export default MODELMERGE;
