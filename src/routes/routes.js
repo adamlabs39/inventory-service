@@ -7,6 +7,7 @@ import PermintaanUnitController from "../controllers/permintaan-unit-controller.
 import PengeluaranUnitController from "../controllers/pengeluaran-unit-controller.js";
 import KartuStokController from "../controllers/kartu-stok-controller.js";
 import StokAdjustmentController from "../controllers/stok-adjustment-controller.js";
+import RiwayatMutasiController from "../controllers/riwayat-mutasi-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -91,4 +92,6 @@ routes.get(`${baseUrl}/stok-adjustment`, StokAdjustmentController.getAll);
 routes.get(`${baseUrl}/stok-adjustment/:uuid`, StokAdjustmentController.getDetail);
 routes.put(`${baseUrl}/stok-adjustment`, StokAdjustmentController.update);
 
+// RIWAYAT MUTASI
+routes.get(`${baseUrl}/mutasi`, RiwayatMutasiController.getAll);
 export default routes;
