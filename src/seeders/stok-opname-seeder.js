@@ -12,11 +12,15 @@ export default class StokOpnameSeeder {
                 "no_stok_opname": "SO-2021-0001",
                 "tanggal_cut_off": toEpochDate(Date.now()),
                 "judul_stok_opname": "Stok Opname Pertama",
-                "jenis_stok_uuids": ["0192b31f-365d-731c-8b16-3a4565c9475e"],
+                "jenis_stoks": [{
+                    "uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
+                    "name": "bpjs",
+                }],
                 "kategori_item": "medis",
                 "jenis_items": ["obat", "alkes"],
                 "petugas_so": "admin",
                 "status": "draft",
+                "lokasi_stok_uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
             },
             {
                 "faskes_uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
@@ -24,11 +28,15 @@ export default class StokOpnameSeeder {
                 "no_stok_opname": "SO-2021-0002",
                 "tanggal_cut_off": toEpochDate(Date.now()),
                 "judul_stok_opname": "Stok Opname Pertama",
-                "jenis_stok_uuids": ["0192b31f-365d-731c-8b16-3a4565c9475e"],
+                "jenis_stoks": [{
+                    "uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
+                    "name": "bpjs",
+                }],
                 "kategori_item": "medis",
                 "jenis_items": ["obat", "alkes"],
                 "petugas_so": "admin",
                 "status": "final",
+                "lokasi_stok_uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
             },
         ];
 
