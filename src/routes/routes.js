@@ -9,6 +9,7 @@ import KartuStokController from "../controllers/kartu-stok-controller.js";
 import StokAdjustmentController from "../controllers/stok-adjustment-controller.js";
 import RiwayatMutasiController from "../controllers/riwayat-mutasi-controller.js";
 import StokOpnameController from "../controllers/stok-opname-controller.js";
+import PenerimaanReturController from "../controllers/penerimaan-retur-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -100,5 +101,9 @@ routes.get(`${baseUrl}/stok-opname/:uuid`, StokOpnameController.getDetail);
 routes.get(`${baseUrl}/stok-opname/:uuid/kartu-stok`, StokOpnameController.getStockCard);
 routes.post(`${baseUrl}/stok-opname`, StokOpnameController.create);
 routes.post(`${baseUrl}/stok-opname/import`, StokOpnameController.importStockCard);
+
+// PENERIMAAN RETUR
+routes.get(`${baseUrl}/penerimaan-retur-unit`, PenerimaanReturController.getAll);
+routes.get(`${baseUrl}/penerimaan-retur-unit/:uuid`, PenerimaanReturController.getDetail);
 
 export default routes;
