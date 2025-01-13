@@ -1,3 +1,6 @@
+import BadRequestException from "../errors/bad-request-exception.js";
+import * as XLSX from "xlsx";
+
 export default class Utils {
     static camelToSnakeObject(obj, exclude = []) {
         const newObj = {};
@@ -5,7 +8,7 @@ export default class Utils {
         for (let key in obj) {
             if (obj.hasOwnProperty(key)) {
 
-                if(exclude.includes(key)){
+                if (exclude.includes(key)) {
                     newObj[key] = obj[key];
                     continue;
                 }
@@ -45,8 +48,8 @@ export default class Utils {
         };
     }
 
-    static pelayananToJenisStockCode(pelayanan){
-        switch(pelayanan){
+    static pelayananToJenisStockCode(pelayanan) {
+        switch (pelayanan) {
             case 'ri':
                 return '0';
             case 'rj':
@@ -61,9 +64,8 @@ export default class Utils {
     }
 
     static nullToType(key, dataType = String) {
-        if (key === null || key === undefined){
-            switch (dataType)
-            {
+        if (key === null || key === undefined) {
+            switch (dataType) {
                 case String:
                     return ''
                 case Number:
@@ -74,14 +76,14 @@ export default class Utils {
                     return {}
                 case Array:
                     return []
-                }
+            }
         }
 
         return key
     }
 
-    static numberTo13Digit(num){
-        if (num instanceof String){
+    static numberTo13Digit(num) {
+        if (num instanceof String) {
             num = parseInt(num)
         }
 
@@ -90,7 +92,7 @@ export default class Utils {
         return num * Math.pow(10, power)
     }
 
-    static generate4Code(initialCode = ""){
+    static generate4Code(initialCode = "") {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         const charactersLength = characters.length;
         for (let i = 0; i < 4; i++) {
@@ -98,5 +100,23 @@ export default class Utils {
         }
 
         return initialCode
+    }
+
+    static parseExcelToJSON(req, sheetOrder = 0) {
+        const file = req.files?.files || null;
+        console.log(req.files);
+        const availableMimeTypes = ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
+        if (!file) {
+            throw new BadRequestException("kunci 'file' tidak ditemukan");
+        }
+
+        if (!availableMimeTypes.includes(file.mimetype)) {
+            throw new BadRequestException("file bukan excel");
+        }
+
+        const wb = XLSX.read(file.data, {type: 'buffer'});
+        const sheet = wb.Sheets[wb.SheetNames[sheetOrder]];
+
+        return XLSX.utils.sheet_to_json(sheet, {raw: true, defval: null});
     }
 }

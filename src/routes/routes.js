@@ -99,5 +99,6 @@ routes.get(`${baseUrl}/stok-opname`, StokOpnameController.getAll);
 routes.get(`${baseUrl}/stok-opname/:uuid`, StokOpnameController.getDetail);
 routes.get(`${baseUrl}/stok-opname/:uuid/kartu-stok`, StokOpnameController.getStockCard);
 routes.post(`${baseUrl}/stok-opname`, StokOpnameController.create);
+routes.post(`${baseUrl}/stok-opname/import`, StokOpnameController.importStockCard);
 
 export default routes;

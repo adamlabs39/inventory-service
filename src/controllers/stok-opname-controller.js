@@ -1,5 +1,6 @@
 import StokOpnameService from "../services/stok-opname-service.js";
 import successResponse from "../responses/success-response.js";
+import Utils from "../helpers/utils.js";
 
 export default class StokOpnameController {
     static async getAll(req, res, nextFunction) {
@@ -40,6 +41,19 @@ export default class StokOpnameController {
             res.status(201).json(successResponse("data berhasil ditambahkan"));
         } catch (error) {
             nextFunction(error);
+        }
+    }
+
+    static async importStockCard(req, res, nextFunction) {
+        try {
+            req.body.data = Utils.parseExcelToJSON(req);
+
+            const result = await StokOpnameService.importStockCard(req.body);
+
+            res.status(201).json(successResponse("data berhasil ditambahkan", result));
+
+        } catch (e) {
+            nextFunction(e);
         }
     }
 }
