@@ -1,5 +1,5 @@
 import {
-    RiwatatMutasiModel
+    RiwayatMutasiModel
 } from "@adameds/model-sdk/inventory";
 
 export default class RiwayatMutasiSeeder {
@@ -23,6 +23,6 @@ export default class RiwayatMutasiSeeder {
             },
         ];
 
-        await RiwatatMutasiModel.bulkCreate(riwayat, {transaction});
+        await RiwayatMutasiModel.bulkCreate(riwayat, {transaction});
     }
 }

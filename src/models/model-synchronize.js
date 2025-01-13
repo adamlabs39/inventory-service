@@ -1,9 +1,8 @@
-import {ConversionModel, JenisStokModel} from "@adameds/model-sdk/farmasi";
 import {
-    PembelianBarangSupplierModel, PengeluaranUnitItemModel,
+    PengeluaranUnitItemModel,
     PengeluaranUnitModel,
     PermintaanUnitItemModel,
-    PermintaanUnitModel, ReturUnitItemModel, ReturUnitModel, RiwatatMutasiModel, StokOpnameItemModel, StokOpnameModel,
+    PermintaanUnitModel, ReturUnitItemModel, ReturUnitModel, StokOpnameItemModel, StokOpnameModel,
 } from "@adameds/model-sdk/inventory";
 
 const MODELMERGE = [
@@ -13,7 +12,7 @@ const MODELMERGE = [
     PermintaanUnitItemModel,
     PengeluaranUnitModel,
     PengeluaranUnitItemModel,
-    RiwatatMutasiModel,
+    RiwayatMutasiModel,
     StokOpnameModel,
     StokOpnameItemModel,
     ReturUnitModel,

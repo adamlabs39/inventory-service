@@ -1,7 +1,9 @@
 import {Op} from "sequelize";
 import {ItemMedisModel, JenisStokModel} from "@adameds/model-sdk/farmasi";
 import Pagination from "../helpers/pagination.js";
-import {RiwatatMutasiModel} from "@adameds/model-sdk/inventory";
+import {
+    RiwayatMutasiModel,
+} from "@adameds/model-sdk/inventory";
 
 export default class RiwayatMutasiRepository {
     static async getAll(req) {
@@ -47,6 +49,6 @@ export default class RiwayatMutasiRepository {
             ]
         }
 
-        return await Pagination.init(RiwatatMutasiModel, req, option);
+        return await Pagination.init(RiwayatMutasiModel, req, option);
     }
 }

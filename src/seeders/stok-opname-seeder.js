@@ -1,5 +1,5 @@
 import {
-    RiwatatMutasiModel, StokOpnameItemModel, StokOpnameModel
+    StokOpnameItemModel, StokOpnameModel
 } from "@adameds/model-sdk/inventory";
 import {toEpochDate} from "../helpers/date-helper.js";
 
