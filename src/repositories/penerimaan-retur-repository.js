@@ -1,4 +1,4 @@
-import {ReturUnitItemModel, ReturUnitModel, StockMedisModel} from "@adameds/model-sdk/inventory";
+import {ReturUnitItemModel, ReturUnitModel} from "@adameds/model-sdk/inventory";
 import {Op} from "sequelize";
 import {ItemMedisModel, LokasiStokModel, SatuanModel} from "@adameds/model-sdk/farmasi";
 import sequelizeInstance from "@adameds/model-sdk/instance";
