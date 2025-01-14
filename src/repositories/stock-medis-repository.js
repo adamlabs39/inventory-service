@@ -1,8 +1,7 @@
 import {Op} from "sequelize";
-import sequelizeInstance from "../configurations/sequelize-instance.js";
 import BadRequestException from "../errors/bad-request-exception.js";
 import {StockMedisModel} from "@adameds/model-sdk/inventory";
-import {ItemMedisModel} from "@adameds/model-sdk/farmasi";
+import {ItemMedisJenisStokModel, ItemMedisModel, JenisStokModel} from "@adameds/model-sdk/farmasi";
 
 export default class StockMedisRepository {
     static async reduceQuantity(req, t) {
@@ -22,20 +21,33 @@ export default class StockMedisRepository {
                 order.push(["created_at", "DESC"]);
             }
 
-            const totalStock = await StockMedisModel.sum('sisa_stok', {
+            const sisaStockRaw = await StockMedisModel.findAll({
                 where: {
-                    item_medis_uuid: req.item_medis_uuid,
                     sisa_stok: {
                         [Op.gt]: 0
                     },
                     exp_date: {
                         [Op.gt]: today
                     },
-                    jenis_stok_uuid: req.jenis_stok_uuid,
                     lokasi_stok_uuid: req.lokasi_stok_uuid,
                 },
+                attributes: ['sisa_stok'],
+                include: [
+                    {
+                        model: ItemMedisJenisStokModel,
+                        as: 'item_medis_jenis_stok',
+                        required: true,
+                        where: {
+                            jenis_stok_uuid: req.jenis_stok_uuid,
+                            item_medis_uuid: req.item_medis_uuid,
+                        },
+                        attributes: ['uuid'],
+                    }
+                ],
                 transaction: t,
             });
+
+            const totalStock = sisaStockRaw.reduce((acc, curr) => acc + curr.sisa_stok, 0);
 
             if (totalStock < req.quantity) {
                 throw new BadRequestException(`${req.name} not enough or empty (total stock : ${totalStock})`);
@@ -44,16 +56,26 @@ export default class StockMedisRepository {
             while (remainingQuantity > 0) {
                 stock = await StockMedisModel.findOne({
                     where: {
-                        item_medis_uuid: req.item_medis_uuid,
                         sisa_stok: {
                             [Op.gt]: 0
                         },
                         exp_date: {
                             [Op.gt]: today
                         },
-                        jenis_stok_uuid: req.jenis_stok_uuid,
                         lokasi_stok_uuid: req.lokasi_stok_uuid,
                     },
+                    include: [
+                        {
+                            model: ItemMedisJenisStokModel,
+                            as: 'item_medis_jenis_stok',
+                            required: true,
+                            where: {
+                                item_medis_uuid: req.item_medis_uuid,
+                                jenis_stok_uuid: req.jenis_stok_uuid,
+                            },
+                            attributes: ['uuid'],
+                        }
+                    ],
                     order: order,
                     transaction: t,
                     lock: t.LOCK.UPDATE,
@@ -105,16 +127,25 @@ export default class StockMedisRepository {
                 },
                 include: [
                     {
-                        model: ItemMedisModel,
-                        as: 'item_medis',
+                        model: ItemMedisJenisStokModel,
+                        as: "item_medis_jenis_stok",
                         required: true,
-                        attributes: ['name'],
+                        attributes: ["uuid"],
+                        include: [
+                            {
+                                model: ItemMedisModel,
+                                as: 'item_medis',
+                                required: true,
+                                attributes: ['name'],
+                            }
+                        ],
                     }
                 ],
+
             });
 
             if (stock.sisa_stok < req.quantity) {
-                throw new BadRequestException(`${stock.dataValues.item_medis?.name} not enough or empty`);
+                throw new BadRequestException(`${stock.dataValues.item_medis_jenis_stok?.dataValues?.item_medis?.name} not enough or empty`);
             }
 
             const newStock = stock.sisa_stok - req.quantity;
@@ -128,29 +159,11 @@ export default class StockMedisRepository {
             );
 
             if (result[0] === 0) {
-                throw new BadRequestException(`${stock.dataValues.item_medis?.name}  stok medis tidak diupdate`);
+                throw new BadRequestException(`${stock.dataValues.item_medis_jenis_stok?.dataValues?.item_medis?.name}  stok medis tidak diupdate`);
             }
 
             return stock;
         }
-    }
-
-
-    static async addQuantity(req, transaction) {
-        await StockMedisModel.update({
-            sisa_stok: sequelizeInstance.literal(`sisa_stok + ${req.quantity}`)
-        }, {
-            where: {
-                uuid: req.stock_medis_uuid
-            },
-            transaction
-        });
-    }
-
-    static async create(req, transaction) {
-        return await StockMedisModel.create(req, {
-            transaction
-        });
     }
 
     static async bulkCreate(req, transaction) {
@@ -189,25 +202,52 @@ export default class StockMedisRepository {
                 exp_date: {
                     [Op.gt]: new Date(req.tanggal_pengeluaran)
                 },
-                jenis_stok_uuid: req.jenis_stok_uuid,
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
             },
             attributes: ["exp_date", "sisa_stok", "harga_satuan"],
             include: [
                 {
-                    model: ItemMedisModel,
-                    as: "item_medis",
+                    model: ItemMedisJenisStokModel,
+                    as: 'item_medis_jenis_stok',
                     required: true,
-                    where: {
-                        jenis_item: req.jenis_item,
-                    },
-                    attributes: ["name", "uuid"]
-                },
+                    attributes: ['uuid'],
+                    include: [
+                        {
+                            model: JenisStokModel,
+                            as: 'detail_stok',
+                            required: true,
+                            attributes: ['name'],
+                            where: {
+                                uuid: req.jenis_stok_uuid
+                            }
+                        },
+                        {
+                            model: ItemMedisModel,
+                            as: 'item_medis',
+                            required: true,
+                            attributes: ['name', 'uuid'],
+                        }
+                    ],
+                }
             ]
         });
 
         if (!result) {
             throw new BadRequestException({message: "Data tidak ditemukan"});
+        }
+
+        return result;
+    }
+
+    static async update(req) {
+        const result = await StockMedisModel.update(req, {
+            where: {
+                uuid: req.uuid
+            }
+        });
+
+        if (result[0] === 0) {
+            throw new BadRequestException("Data tidak ditemukan");
         }
 
         return result;
