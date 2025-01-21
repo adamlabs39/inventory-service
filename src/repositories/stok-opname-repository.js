@@ -1,7 +1,8 @@
-import {Op} from "sequelize";
+import {Op, where} from "sequelize";
 import {StockMedisModel, StokOpnameModel} from "@adameds/model-sdk/inventory";
 import Pagination from "../helpers/pagination.js";
-import {ItemMedisJenisStokModel, ItemMedisModel, JenisStokModel} from "@adameds/model-sdk/farmasi";
+import {ItemMedisJenisStokModel, ItemMedisModel, JenisStokModel, KategoriObatModel} from "@adameds/model-sdk/farmasi";
+import sequelizeInstance from "@adameds/model-sdk/instance";
 
 export default class StokOpnameRepository {
     static async getAll(req) {
@@ -33,41 +34,86 @@ export default class StokOpnameRepository {
     }
 
     static async getStockCard(req) {
-        return await ItemMedisModel.findAll({
-            where: {
-                faskes_uuid: req.faskes_uuid,
-                jenis_item: req.jenis_items,
-            },
-            attributes: ['uuid', 'code', 'name'],
-            include: [
-                {
-                    model: ItemMedisJenisStokModel,
-                    required: false,
-                    as: 'jenis_stok',
-                    attributes: ['name'],
-                    include: [
-                        {
-                            model: JenisStokModel,
-                            required: true,
-                            as: 'detail_stok',
-                            attributes: ['name', 'uuid'],
-                            where: {
-                                uuid: req.jenis_stok_uuids
-                            },
+
+        const optionJoin = [
+            {
+                model: KategoriObatModel,
+                required: false,
+                as: 'kategori_obat',
+                attributes: ['name'],
+
+            }
+        ]
+
+        const optionWhere = {
+            faskes_uuid: req.faskes_uuid,
+            jenis_item: req.jenis_items,
+        }
+
+        if (req.type === "master_stok") {
+            optionJoin.push({
+                model: ItemMedisJenisStokModel,
+                required: true,
+                as: 'jenis_stok',
+                attributes: ['uuid'],
+                include: [
+                    {
+                        model: JenisStokModel,
+                        required: true,
+                        as: 'detail_stok',
+                        attributes: ['name', 'uuid'],
+                        where: {
+                            uuid: req.jenis_stok_uuids
                         },
-                        {
-                            model: StockMedisModel,
-                            required: false,
-                            as: 'stocks',
-                            attributes: ['sisa_stok', 'harga_satuan', 'stok', 'stok'],
-                            where: {
-                                lokasi_stok_uuid: req.lokasi_stok_uuid,
-                                sisa_stok: {[Op.gt]: 0}
-                            }
+                    },
+                    {
+                        model: StockMedisModel,
+                        required: true,
+                        as: 'stocks',
+                        attributes: ['sisa_stok', 'harga_satuan', 'stok', 'exp_date'],
+                        where: {
+                            lokasi_stok_uuid: req.lokasi_stok_uuid,
+                            sisa_stok: {[Op.gt]: 0}
                         }
-                    ]
-                }
-            ]
-        })
+                    }
+                ]
+            },)
+        } else if (req.type === "master_item") {
+            optionJoin.push({
+                model: ItemMedisJenisStokModel,
+                required: true,
+                as: 'jenis_stok',
+                attributes: ['uuid'],
+                include: [
+                    {
+                        model: StockMedisModel,
+                        required: false,
+                        as: 'stocks',
+                        attributes: ["uuid"],
+                        where: {
+                            lokasi_stok_uuid: req.lokasi_stok_uuid,
+                            sisa_stok: {[Op.lte]: 0}
+                        }
+                    },
+                    {
+                        model: JenisStokModel,
+                        required: true,
+                        as: 'detail_stok',
+                        attributes: ['name', 'uuid'],
+                        where: {
+                            uuid: req.jenis_stok_uuids
+                        },
+                    },
+                ]
+            })
+        }
+
+        const option = {
+            where: optionWhere,
+            attributes: ['uuid', 'code', 'name', 'jenis_item'],
+            include: optionJoin
+        }
+
+        return await ItemMedisModel.findAll(option);
     }
 }

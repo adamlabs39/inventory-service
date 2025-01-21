@@ -19,7 +19,70 @@ export default class StokOpnameService {
     static async getStockCard(req) {
         ZodValidator.validate(StokOpnameValidation.GET_STOCK_CARD, req);
 
-        return await StokOpnameRepository.getStockCard(req);
+        req.jenis_stok_uuids = req.jenis_stok_uuids.split(",");
+        req.jenis_items = req.jenis_items.split(",");
+
+        const result = await StokOpnameRepository.getStockCard(req);
+
+        const response = [];
+
+        if (result) {
+            if (req.type === "master_stok") {
+                result.forEach((item) => {
+                    item.jenis_stok.forEach((jenisStok) => {
+                        jenisStok.stocks.forEach((stock) => {
+                            const expDate = stock.exp_date.toISOString().split("T")[0];
+
+                            const existingStock = response.find(
+                                res => res.exp_date === expDate &&
+                                    res.name === item.name &&
+                                    res.harga_satuan === stock.harga_satuan &&
+                                    res.kategori_obat === item.kategori_obat?.name &&
+                                    res.jenis_item === item.jenis_item &&
+                                    res.jenis_stok === jenisStok.detail_stok.name
+                            );
+
+                            if (existingStock) {
+                                existingStock.stok += stock.sisa_stok;
+                                existingStock.stok_masuk += stock.stok;
+                                existingStock.stok_keluar += (stock.stok - stock.sisa_stok);
+                            } else {
+                                response.push({
+                                    name: item.name,
+                                    exp_date: expDate,
+                                    harga_satuan: stock.harga_satuan,
+                                    stok_masuk: stock.stok,
+                                    stok: stock.sisa_stok,
+                                    stok_keluar: stock.stok - stock.sisa_stok,
+                                    kategori_obat: item.kategori_obat?.name,
+                                    jenis_item: item.jenis_item,
+                                    jenis_stok: jenisStok.detail_stok.name,
+                                });
+                            }
+                        });
+                    })
+                })
+            } else {
+                result.forEach((item) => {
+                    item.jenis_stok.forEach((jenisStok) => {
+                        response.push({
+                            name: item.name,
+                            exp_date: "-",
+                            harga_satuan: 0,
+                            stok_masuk: 0,
+                            stok: 0,
+                            stok_keluar: 0,
+                            kategori_obat: item.kategori_obat?.name,
+                            jenis_item: item.jenis_item,
+                            jenis_stok: jenisStok.detail_stok?.name,
+                        });
+                    })
+                })
+
+            }
+        }
+
+        return response;
     }
 
     static async create(req) {

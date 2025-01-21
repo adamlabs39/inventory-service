@@ -25,7 +25,7 @@ export default class StokOpnameController {
 
     static async getStockCard(req, res, nextFunction) {
         try {
-            req.query.uuid = req.params.uuid;
+            req.query.faskes_uuid = req.author.faskesUuid;
             const data = await StokOpnameService.getStockCard(req.query);
             res.status(201).json(successResponse("data berhasil didapat", data));
         } catch (error) {
