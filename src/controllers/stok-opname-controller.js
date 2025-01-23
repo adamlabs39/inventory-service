@@ -56,4 +56,11 @@ export default class StokOpnameController {
             nextFunction(e);
         }
     }
+
+    // be menerima excel
+    // --> return dalam bentuk json
+    // --> fe mengirim row mana saja yang perlu ditambahkan
+    // --> be menerima row dan langsung balikan success
+    // --> pubsub untuk validasi, insert data, dan update data (status stok opname : proses)
+    // --> jika selesai update status stok opaname ke draf/success
 }

@@ -18,8 +18,14 @@ export default class ExcelMapper {
             newItem.item_type = item["__EMPTY_3"];
             newItem.stock_type = item["__EMPTY_4"];
             newItem.unit = item["__EMPTY_5"];
-            newItem.physical_stock = item["__EMPTY_6"];
-            newItem.expired_date = item["__EMPTY_7"];
+            newItem.initial_stock = item["__EMPTY_6"];
+            newItem.in_stock = item["__EMPTY_7"];
+            newItem.out_stock = item["__EMPTY_8"];
+            newItem.system_stock = item["__EMPTY_9"];
+            newItem.physical_stock = item["__EMPTY_10"];
+            newItem.expired_date = item["__EMPTY_11"];
+            newItem.price = item["__EMPTY_12"];
+            newItem.final_price = item["__EMPTY_13"];
             result.items.push(newItem);
         })
 
