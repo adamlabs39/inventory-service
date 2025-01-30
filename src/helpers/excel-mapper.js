@@ -26,6 +26,7 @@ export default class ExcelMapper {
             newItem.expired_date = item["__EMPTY_11"];
             newItem.price = item["__EMPTY_12"];
             newItem.final_price = item["__EMPTY_13"];
+            newItem.id = item["__EMPTY_14"];
             result.items.push(newItem);
         })
 
