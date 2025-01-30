@@ -65,17 +65,51 @@ export default class StokOpnameService {
             } else {
                 result.forEach((item) => {
                     item.jenis_stok.forEach((jenisStok) => {
-                        response.push({
-                            name: item.name,
-                            exp_date: "-",
-                            harga_satuan: 0,
-                            stok_masuk: 0,
-                            stok: 0,
-                            stok_keluar: 0,
-                            kategori_obat: item.kategori_obat?.name,
-                            jenis_item: item.jenis_item,
-                            jenis_stok: jenisStok.detail_stok?.name,
-                        });
+                        if (jenisStok.stocks?.length > 0) {
+                            jenisStok.stocks.forEach((stock) => {
+                                const expDate = stock.exp_date.toISOString().split("T")[0];
+
+                                const existingStock = response.find(
+                                    res => res.exp_date === expDate &&
+                                        res.name === item.name &&
+                                        res.harga_satuan === stock.harga_satuan &&
+                                        res.kategori_obat === item.kategori_obat?.name &&
+                                        res.jenis_item === item.jenis_item &&
+                                        res.jenis_stok === jenisStok.detail_stok.name
+                                );
+
+                                if (existingStock) {
+                                    existingStock.stok += stock.sisa_stok;
+                                    existingStock.stok_masuk += stock.stok;
+                                    existingStock.stok_keluar += (stock.stok - stock.sisa_stok);
+                                } else {
+                                    response.push({
+                                        name: item.name,
+                                        exp_date: stock.sisa_stok === 0 ? '-' : expDate,
+                                        harga_satuan: stock.sisa_stok === 0 ? 0 : stock.harga_satuan,
+                                        stok_masuk: stock.sisa_stok === 0 ? 0 : stock.stok,
+                                        stok: stock.sisa_stok,
+                                        stok_keluar: stock.sisa_stok === 0 ? 0 : (stock.stok - stock.sisa_stok),
+                                        kategori_obat: item.kategori_obat?.name,
+                                        jenis_item: item.jenis_item,
+                                        jenis_stok: jenisStok.detail_stok.name,
+                                    });
+                                }
+                            });
+                        } else {
+                            response.push({
+                                name: item.name,
+                                exp_date: "-",
+                                harga_satuan: 0,
+                                stok_masuk: 0,
+                                stok: 0,
+                                stok_keluar: 0,
+                                kategori_obat: item.kategori_obat?.name,
+                                jenis_item: item.jenis_item,
+                                jenis_stok: jenisStok.detail_stok?.name,
+                            });
+                        }
+
                     })
                 })
 
@@ -86,7 +120,11 @@ export default class StokOpnameService {
     }
 
     static async create(req) {
-
+        // 1. check item medis code, if not found throw error
+        // 2. check system stock and id, if both null create new stock
+        // 3. check system stock and id, if one of those null throw error
+        // 4. check id, if not found throw error
+        // 5. update stock (system stock += (real stock - system stock))
     }
 
     static async saveExistingStock(req) {

@@ -1,8 +1,7 @@
-import {Op, where} from "sequelize";
+import {Op} from "sequelize";
 import {StockMedisModel, StokOpnameModel} from "@adameds/model-sdk/inventory";
 import Pagination from "../helpers/pagination.js";
 import {ItemMedisJenisStokModel, ItemMedisModel, JenisStokModel, KategoriObatModel} from "@adameds/model-sdk/farmasi";
-import sequelizeInstance from "@adameds/model-sdk/instance";
 
 export default class StokOpnameRepository {
     static async getAll(req) {
@@ -89,10 +88,9 @@ export default class StokOpnameRepository {
                         model: StockMedisModel,
                         required: false,
                         as: 'stocks',
-                        attributes: ["uuid"],
+                        attributes: ['sisa_stok', 'harga_satuan', 'stok', 'exp_date'],
                         where: {
                             lokasi_stok_uuid: req.lokasi_stok_uuid,
-                            sisa_stok: {[Op.lte]: 0}
                         }
                     },
                     {

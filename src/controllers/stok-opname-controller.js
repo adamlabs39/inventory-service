@@ -57,10 +57,12 @@ export default class StokOpnameController {
         }
     }
 
-    // be menerima excel
-    // --> return dalam bentuk json
-    // --> fe mengirim row mana saja yang perlu ditambahkan
-    // --> be menerima row dan langsung balikan success
-    // --> pubsub untuk validasi, insert data, dan update data (status stok opname : proses)
-    // --> jika selesai update status stok opaname ke draf/success
+    // 0. delete stok opname if exist
+    // 1. insert into stok opname
+    // 2. send success to user, then turn into pubsub mode
+    // 3. validate data
+
+    // if save as final (not draft)
+    // 4. adjust stock in stok medis
+    // 5. update status in stok opname
 }
