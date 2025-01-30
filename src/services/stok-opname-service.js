@@ -57,6 +57,7 @@ export default class StokOpnameService {
                                     kategori_obat: item.kategori_obat?.name,
                                     jenis_item: item.jenis_item,
                                     jenis_stok: jenisStok.detail_stok.name,
+                                    id: stock.sisa_stok === 0 ? '-' : stock.uuid,
                                 });
                             }
                         });
@@ -93,6 +94,7 @@ export default class StokOpnameService {
                                         kategori_obat: item.kategori_obat?.name,
                                         jenis_item: item.jenis_item,
                                         jenis_stok: jenisStok.detail_stok.name,
+                                        id: stock.sisa_stok === 0 ? '-' : stock.uuid,
                                     });
                                 }
                             });
@@ -107,6 +109,7 @@ export default class StokOpnameService {
                                 kategori_obat: item.kategori_obat?.name,
                                 jenis_item: item.jenis_item,
                                 jenis_stok: jenisStok.detail_stok?.name,
+                                id: "-"
                             });
                         }
 
