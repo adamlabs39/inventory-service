@@ -87,7 +87,7 @@ export default class StokOpnameRepository {
                 stockModelJoin
             ]
         },)
-        
+
         const option = {
             where: optionWhere,
             attributes: ['uuid', 'code', 'name', 'jenis_item'],
@@ -95,5 +95,22 @@ export default class StokOpnameRepository {
         }
 
         return await ItemMedisModel.findAll(option);
+    }
+
+    static async upsert(req, transaction) {
+        return await StokOpnameModel.upsert(req, {
+            transaction
+        });
+    }
+
+    static async getDetail(uuid) {
+        return await StokOpnameModel.findOne({
+            where: {
+                uuid: uuid,
+            },
+            attributes: {
+                exclude: ['created_at', 'updated_at', 'deleted_at', 'id']
+            }
+        })
     }
 }

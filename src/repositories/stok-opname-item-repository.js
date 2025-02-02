@@ -1,0 +1,16 @@
+import {StokOpnameItemModel} from "@adameds/model-sdk/inventory";
+
+export default class StokOpnameItemRepository {
+    static async destroyByStokOpname(stok_opname_uuid, transaction) {
+        return await StokOpnameItemModel.destroy({
+            where: {
+                stok_opname_uuid: stok_opname_uuid
+            },
+            transaction: transaction
+        });
+    }
+
+    static async bulkCreate(items, transaction) {
+        return await StokOpnameItemModel.bulkCreate(items, {transaction: transaction});
+    }
+}
