@@ -131,6 +131,27 @@ export default class StokOpnameService {
         ZodValidator.validate(StokOpnameValidation.SAVE, req);
         const transaction = await sequelizeInstance.transaction();
 
+
+        // region FILL ITEMS IF NOT EXIST
+        if (!req.items) {
+            const stokOpname = await StokOpnameItemRepository.getByStokOpname(req.stok_opname_uuid);
+
+            if (stokOpname.length <= 0) {
+                throw new BadRequestException("items tidak boleh kosong");
+            }
+
+            req.items = stokOpname.map(item => {
+                return {
+                    kode_item: item.kode_item,
+                    stok_fisik: item.stok_fisik,
+                    stok_sistem: item.stok_sistem,
+                    id_stok: item.id_stok,
+                    ed: item.ed,
+                }
+            });
+        }
+        // endregion
+
         try {
             if (req.type === "final") {
                 // region CHECK ITEM MEDIS CODE
@@ -170,9 +191,8 @@ export default class StokOpnameService {
                 // endregion
 
                 // region ADJUST STOK
-                for (const [index, item] of req.items.entries()) {
+                for (const item of req.items) {
                     if (item.id_stok && item.stok_sistem) {
-                        // TODO : UPDATE STOCK
                         await StockMedisRepository.adjustStockForStokOpname({
                             uuid: item.id_stok,
                             qty: item.stok_fisik - item.stok_sistem,

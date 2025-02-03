@@ -31,7 +31,7 @@ export default class StokOpnameValidation {
         jenis_stoks: z.array(z.string()),
         kategori_item: z.string().min(1, required),
         jenis_items: z.array(z.string()),
-        lokasi_stok_uuid: z.string().min(1, required),
+        lokasi_stok_uuid: z.string().min(1, required)
     });
 
     static UPDATE_STOCK_STOCK_OPNAME = z.object({

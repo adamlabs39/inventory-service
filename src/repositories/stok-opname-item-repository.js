@@ -13,4 +13,12 @@ export default class StokOpnameItemRepository {
     static async bulkCreate(items, transaction) {
         return await StokOpnameItemModel.bulkCreate(items, {transaction: transaction});
     }
+
+    static async getByStokOpname(stok_opname_uuid) {
+        return await StokOpnameItemModel.findAll({
+            where: {
+                stok_opname_uuid: stok_opname_uuid
+            }
+        });
+    }
 }
