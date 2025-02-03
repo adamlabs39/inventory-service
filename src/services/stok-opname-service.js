@@ -17,10 +17,6 @@ export default class StokOpnameService {
         return await StokOpnameRepository.getAll(req);
     }
 
-    static async getDetail(req) {
-
-    }
-
     static async getStockCard(req) {
         ZodValidator.validate(StokOpnameValidation.GET_STOCK_CARD, req);
 
@@ -267,5 +263,9 @@ export default class StokOpnameService {
         ZodValidator.validate(StokOpnameValidation.DELETE_SOME, req);
 
         await StokOpnameItemRepository.deleteSome(req.uuids);
+    }
+
+    static async getDetail(req) {
+        return await StokOpnameItemRepository.getPaginationByStokOpname(req);
     }
 }
