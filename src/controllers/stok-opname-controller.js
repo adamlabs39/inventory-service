@@ -57,12 +57,12 @@ export default class StokOpnameController {
         }
     }
 
-    // 0. delete stok opname if exist
-    // 1. insert into stok opname
-    // 2. send success to user, then turn into pubsub mode
-    // 3. validate data
-
-    // if save as final (not draft)
-    // 4. adjust stock in stok medis
-    // 5. update status in stok opname
+    static async deleteItems(req, res, nextFunction) {
+        try {
+            await StokOpnameService.deleteItems(req.body);
+            res.status(200).json(successResponse("data berhasil dihapus"));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
 }

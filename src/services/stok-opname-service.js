@@ -262,4 +262,10 @@ export default class StokOpnameService {
 
         return stokOpname;
     }
+
+    static async deleteItems(req) {
+        ZodValidator.validate(StokOpnameValidation.DELETE_SOME, req);
+
+        await StokOpnameItemRepository.deleteSome(req.uuids);
+    }
 }

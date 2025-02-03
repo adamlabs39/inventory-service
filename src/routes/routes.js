@@ -101,6 +101,7 @@ routes.get(`${baseUrl}/stok-opname/kartu-stok`, StokOpnameController.getStockCar
 routes.get(`${baseUrl}/stok-opname/:uuid`, StokOpnameController.getDetail);
 routes.post(`${baseUrl}/stok-opname`, StokOpnameController.create);
 routes.post(`${baseUrl}/stok-opname/import`, StokOpnameController.importStockCard);
+routes.post(`${baseUrl}/stok-opname/delete-items`, StokOpnameController.deleteItems);
 
 // PENERIMAAN RETUR
 routes.get(`${baseUrl}/penerimaan-retur-unit`, PenerimaanReturController.getAll);

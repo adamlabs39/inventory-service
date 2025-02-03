@@ -34,8 +34,7 @@ export default class StokOpnameValidation {
         lokasi_stok_uuid: z.string().min(1, required)
     });
 
-    static UPDATE_STOCK_STOCK_OPNAME = z.object({
-        stok_fisik: z.number().min(0, required),
-        stok_sistem: z.number().min(0, required),
+    static DELETE_SOME = z.object({
+        uuids: z.array(z.string().min(1, required))
     })
 }

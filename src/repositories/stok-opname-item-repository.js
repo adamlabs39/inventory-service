@@ -21,4 +21,12 @@ export default class StokOpnameItemRepository {
             }
         });
     }
+
+    static async deleteSome(uuids) {
+        return await StokOpnameItemModel.destroy({
+            where: {
+                uuid: uuids
+            }
+        });
+    }
 }

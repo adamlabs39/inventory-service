@@ -27,6 +27,7 @@ export default class StokOpnameRepository {
                 'petugas_so',
                 'petugas_pengubah',
                 'status',
+                'lokasi_stok_uuid'
             ],
         }
 
