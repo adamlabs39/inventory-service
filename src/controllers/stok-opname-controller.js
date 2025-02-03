@@ -36,7 +36,7 @@ export default class StokOpnameController {
     static async create(req, res, nextFunction) {
         try {
             req.body.faskes_uuid = req.author.faskesUuid;
-            req.body.petugas = req.author.username;
+            req.body.petugas_so = req.author.username;
             await StokOpnameService.create(req.body);
             res.status(201).json(successResponse("data berhasil ditambahkan"));
         } catch (error) {

@@ -8,6 +8,7 @@ import {uuidv7} from "uuidv7";
 import Utils from "../helpers/utils.js";
 import sequelizeInstance from "@adameds/model-sdk/instance";
 import StokOpnameItemRepository from "../repositories/stok-opname-item-repository.js";
+import StockMedisRepository from "../repositories/stock-medis-repository.js";
 
 export default class StokOpnameService {
     static async getAll(req) {
@@ -127,31 +128,78 @@ export default class StokOpnameService {
     }
 
     static async create(req) {
-        // backgorund process
-        // 1. check item medis code, if not found throw error
-        // 2. check system stock and id, if both null create new stock
-        // 3. check system stock and id, if one of those null throw error
-        // 4. check id, if not found throw error
-        // 5. update stock (system stock += (real stock - system stock))
-        // 7. update stok opname status to verified
-
         ZodValidator.validate(StokOpnameValidation.SAVE, req);
         const transaction = await sequelizeInstance.transaction();
 
         try {
+            if (req.type === "final") {
+                // region CHECK ITEM MEDIS CODE
+                const code = req.items.map(item => item.kode_item);
+
+                const itemMedises = await ItemMedisRepository.getByCodes(code);
+
+                code.forEach(
+                    item => {
+                        if (!itemMedises.find(itemMedis => itemMedis.code === item)) {
+                            throw new BadRequestException(`Item dengan kode ${item} tidak ditemukan`);
+                        }
+                    }
+                )
+                // endregion
+
+                // region CHECK STOCK ID IS EXIST
+                const stockNotFoundError = [];
+                const stockCodes = req.items
+                    .filter(item => item.id_stok !== null && item.id_stok !== undefined)
+                    .map(item => item.id_stok);
+
+                const stocks = await StockMedisRepository.getSome(stockCodes);
+
+                stockCodes.forEach(
+                    stock => {
+                        if (!stocks.find(stockMedis => stockMedis.uuid === stock)) {
+                            stockNotFoundError.push(stock);
+                        }
+                    }
+                )
+
+                if (stockNotFoundError.length > 0) {
+                    const error = stockNotFoundError.join(", ");
+                    throw new BadRequestException(`item dengan id stok ${error} tidak ditemukan`);
+                }
+                // endregion
+
+                // region ADJUST STOK
+                for (const [index, item] of req.items.entries()) {
+                    if (item.id_stok && item.stok_sistem) {
+                        // TODO : UPDATE STOCK
+                        await StockMedisRepository.adjustStockForStokOpname({
+                            uuid: item.id_stok,
+                            qty: item.stok_fisik - item.stok_sistem,
+                            exp_date: item.ed,
+                            faskes_uuid: req.faskes_uuid
+                        }, transaction);
+                    }
+                }
+                // endregion
+            }
+
+            // region CREATE STOK OPNAME & ITEM
+            req.petugas_pengubah = req.petugas_so;
             if (!req.stok_opname_uuid) {
                 req.stok_opname_uuid = uuidv7();
                 await StokOpnameItemRepository.destroyByStokOpname(req.stok_opname_uuid, transaction);
             } else {
                 const stokOpname = await StokOpnameRepository.getDetail({uuid: req.stok_opname_uuid});
                 req.no_stok_opname = stokOpname.no_stok_opname;
+                req.petugas_so = stokOpname.petugas_so;
             }
 
             await StokOpnameRepository.upsert({
                 uuid: req.stok_opname_uuid,
                 faskes_uuid: req.faskes_uuid,
                 no_stok_opname: req.no_stok_opname ?? Utils.generate4Code("SO"),
-                status: "process",
+                status: req.type,
                 petugas_so: req.petugas_so,
                 tanggal_cut_off: req.tanggal_cut_off,
                 judul_stok_opname: req.judul_stok_opname,
@@ -160,6 +208,7 @@ export default class StokOpnameService {
                 jenis_items: req.jenis_items,
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
                 error_message: null,
+                petugas_pengubah: req.petugas_pengubah,
             }, transaction);
 
             req.items.forEach(item => {
@@ -167,20 +216,13 @@ export default class StokOpnameService {
             });
 
             await StokOpnameItemRepository.bulkCreate(req.items, transaction);
+            // endregion
 
             await transaction.commit();
         } catch (e) {
             await transaction.rollback();
             throw e;
         }
-    }
-
-    static async saveExistingStock(req) {
-
-    }
-
-    static async saveInitialStock(req) {
-
     }
 
     static async importStockCard(req) {
