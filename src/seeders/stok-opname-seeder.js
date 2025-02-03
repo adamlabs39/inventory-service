@@ -46,8 +46,21 @@ export default class StokOpnameSeeder {
             "faskes_uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
             "uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
             "stok_opname_uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
-            "stok_medis_uuid": "0192b31f-365d-731c-8b16-3a4565c9475e",
-            "stok_fisik": 10,
+            "nama": "paracetamol",
+            "kode_item": "prcm",
+            "kategori": "obat",
+            "jenis_item": "obat",
+            "jenis_stok": "BPJS",
+            "satuan": "pcs",
+            "stok_awal": 10,
+            "stok_masuk": 10,
+            "stok_keluar": 5,
+            "stok_sistem": 5,
+            "stok_fisik": 4,
+            "ed": "2025-12-12",
+            "harga_satuan": 1000,
+            "harga_akhir": 5000,
+            "id_stok": "0192b31f-365d-731c-8b16-3a4565c9475e"
         }]
 
         await StokOpnameItemModel.bulkCreate(items, {transaction});

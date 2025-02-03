@@ -104,7 +104,6 @@ export default class Utils {
 
     static parseExcelToJSON(req, sheetOrder = 0) {
         const file = req.files?.files || null;
-        console.log(req.files);
         const availableMimeTypes = ["application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
         if (!file) {
             throw new BadRequestException("kunci 'file' tidak ditemukan");

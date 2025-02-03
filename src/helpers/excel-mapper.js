@@ -12,21 +12,21 @@ export default class ExcelMapper {
         data.slice(4).forEach((item, index) => {
             const newItem = {};
             newItem.no = index + 1;
-            newItem.code = item["__EMPTY"];
-            newItem.name = item["__EMPTY_1"];
-            newItem.category = item["__EMPTY_2"];
-            newItem.item_type = item["__EMPTY_3"];
-            newItem.stock_type = item["__EMPTY_4"];
-            newItem.unit = item["__EMPTY_5"];
-            newItem.initial_stock = item["__EMPTY_6"];
-            newItem.in_stock = item["__EMPTY_7"];
-            newItem.out_stock = item["__EMPTY_8"];
-            newItem.system_stock = item["__EMPTY_9"];
-            newItem.physical_stock = item["__EMPTY_10"];
-            newItem.expired_date = item["__EMPTY_11"];
-            newItem.price = item["__EMPTY_12"];
-            newItem.final_price = item["__EMPTY_13"];
-            newItem.id = item["__EMPTY_14"];
+            newItem.kode_item = item["__EMPTY"];
+            newItem.nama = item["__EMPTY_1"];
+            newItem.kategori = item["__EMPTY_2"];
+            newItem.jenis_item = item["__EMPTY_3"];
+            newItem.jenis_stok = item["__EMPTY_4"];
+            newItem.satuan = item["__EMPTY_5"];
+            newItem.stok_awal = item["__EMPTY_6"];
+            newItem.stok_masuk = item["__EMPTY_7"];
+            newItem.stok_keluar = item["__EMPTY_8"];
+            newItem.stok_sistem = item["__EMPTY_9"];
+            newItem.stok_fisik = item["__EMPTY_10"];
+            newItem.ed = item["__EMPTY_11"];
+            newItem.harga_dasar = item["__EMPTY_12"];
+            newItem.harga_akhir = item["__EMPTY_13"];
+            newItem.id_stok = item["__EMPTY_14"];
             result.items.push(newItem);
         })
 

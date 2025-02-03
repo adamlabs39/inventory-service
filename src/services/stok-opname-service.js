@@ -59,6 +59,7 @@ export default class StokOpnameService {
                                     jenis_item: item.jenis_item,
                                     jenis_stok: jenisStok.detail_stok.name,
                                     id: stock.sisa_stok === 0 ? '-' : stock.uuid,
+                                    code: item.code,
                                 });
                             }
                         });
@@ -96,6 +97,7 @@ export default class StokOpnameService {
                                         jenis_item: item.jenis_item,
                                         jenis_stok: jenisStok.detail_stok.name,
                                         id: stock.sisa_stok === 0 ? '-' : stock.uuid,
+                                        code: item.code,
                                     });
                                 }
                             });
@@ -110,7 +112,8 @@ export default class StokOpnameService {
                                 kategori_obat: item.kategori_obat?.name,
                                 jenis_item: item.jenis_item,
                                 jenis_stok: jenisStok.detail_stok?.name,
-                                id: "-"
+                                id: "-",
+                                code: item.code,
                             });
                         }
 
@@ -206,7 +209,7 @@ export default class StokOpnameService {
                 req.stok_opname_uuid = uuidv7();
                 await StokOpnameItemRepository.destroyByStokOpname(req.stok_opname_uuid, transaction);
             } else {
-                const stokOpname = await StokOpnameRepository.getDetail({uuid: req.stok_opname_uuid});
+                const stokOpname = await StokOpnameRepository.getDetail(req.stok_opname_uuid);
                 req.no_stok_opname = stokOpname.no_stok_opname;
                 req.petugas_so = stokOpname.petugas_so;
             }
@@ -231,7 +234,13 @@ export default class StokOpnameService {
                 item.stok_opname_uuid = req.stok_opname_uuid;
             });
 
-            await StokOpnameItemRepository.bulkCreate(req.items, transaction);
+            await StokOpnameItemRepository.bulkCreate(req.items.map(item => {
+                return {
+                    ...item,
+                    stok_opname_uuid: req.stok_opname_uuid,
+                    faskes_uuid: req.faskes_uuid,
+                }
+            }), transaction);
             // endregion
 
             await transaction.commit();
@@ -244,7 +253,7 @@ export default class StokOpnameService {
     static async importStockCard(req) {
         const stokOpname = ExcelMapper.mapStokOpname(req.data);
 
-        const code = stokOpname.items.map(item => item.code);
+        const code = stokOpname.items.map(item => item.kode_item);
 
         const result = await ItemMedisRepository.getByCodes(code);
 

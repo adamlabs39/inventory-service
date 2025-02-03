@@ -278,11 +278,14 @@ export default class StockMedisRepository {
             if (remainingQuantity === 0) {
                 break;
             }
-            let availableQuantity = Math.min(stockItem.sisa_stok, Math.abs(remainingQuantity));
+
+            let availableQuantity = 0;
 
             if (remainingQuantity > 0) {
+                availableQuantity = Math.min(stockItem.stok - stockItem.sisa_stok, remainingQuantity);
                 stockItem.sisa_stok += availableQuantity;
             } else {
+                availableQuantity = Math.min(stockItem.sisa_stok, Math.abs(remainingQuantity));
                 stockItem.sisa_stok -= availableQuantity;
             }
 
@@ -302,7 +305,7 @@ export default class StockMedisRepository {
         }
 
         if (remainingQuantity !== 0) {
-            throw new BadRequestException(`Stock untuk id stok ${req.uuid} tidak cukup. stok hilang : ${remainingQuantity}`);
+            throw new BadRequestException(`Stock untuk id stok ${req.uuid}. stok hilang/lebih : ${Math.abs(remainingQuantity)}`);
         }
 
         for (let i = iteration; i < allRelatedStock.length; i++) {
