@@ -252,4 +252,71 @@ export default class StockMedisRepository {
 
         return result;
     }
+
+    static async adjustStockForStokOpname(req, transaction) {
+        const stock = await StockMedisModel.findOne({
+            where: {
+                uuid: req.uuid
+            },
+            transaction
+        })
+
+        const allRelatedStock = await StockMedisModel.findAll({
+            where: {
+                faskes_uuid: req.faskes_uuid,
+                exp_date: stock.exp_date,
+                item_medis_jenis_stok_uuid: stock.item_medis_jenis_stok_uuid,
+                lokasi_stok_uuid: stock.lokasi_stok_uuid,
+
+            }
+        })
+
+        let remainingQuantity = req.qty;
+        let iteration = 0;
+
+        for (let stockItem of allRelatedStock) {
+            if (remainingQuantity === 0) {
+                break;
+            }
+
+            let availableQuantity = 0;
+
+            if (remainingQuantity > 0) {
+                availableQuantity = Math.min(stockItem.stok - stockItem.sisa_stok, remainingQuantity);
+                stockItem.sisa_stok += availableQuantity;
+            } else {
+                availableQuantity = Math.min(stockItem.sisa_stok, Math.abs(remainingQuantity));
+                stockItem.sisa_stok -= availableQuantity;
+            }
+
+            remainingQuantity -= (remainingQuantity > 0 ? availableQuantity : -availableQuantity);
+
+            await StockMedisModel.update({
+                sisa_stok: stockItem.sisa_stok,
+                exp_date: req.exp_date
+            }, {
+                where: {
+                    uuid: stockItem.uuid
+                },
+                transaction
+            })
+
+            iteration++;
+        }
+
+        if (remainingQuantity !== 0) {
+            throw new BadRequestException(`Stock untuk id stok ${req.uuid}. stok hilang/lebih : ${Math.abs(remainingQuantity)}`);
+        }
+
+        for (let i = iteration; i < allRelatedStock.length; i++) {
+            await StockMedisModel.update({
+                exp_date: req.exp_date
+            }, {
+                where: {
+                    uuid: allRelatedStock[i].uuid
+                },
+                transaction
+            })
+        }
+    }
 }
