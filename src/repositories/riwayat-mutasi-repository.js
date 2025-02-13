@@ -51,4 +51,8 @@ export default class RiwayatMutasiRepository {
 
         return await Pagination.init(RiwayatMutasiModel, req, option);
     }
+
+    static async create(req) {
+        await RiwayatMutasiModel.create(req);
+    }
 }

@@ -1,7 +1,6 @@
 import ZodValidator from "../validations/zod-validator.js";
 import RiwayatMutasiValidation from "../validations/riwayat-mutasi-validation.js";
 import RiwayatMutasiRepository from "../repositories/riwayat-mutasi-repository.js";
-import {toEpochDate} from "../helpers/date-helper.js";
 
 export default class RiwayatMutasiService {
     static async getAll(req) {
@@ -39,5 +38,11 @@ export default class RiwayatMutasiService {
         result.pagination = data.pagination;
 
         return result;
+    }
+
+    static async create(req) {
+        ZodValidator.validate(RiwayatMutasiValidation.CREATE, req);
+
+        await RiwayatMutasiRepository.create(req);
     }
 }

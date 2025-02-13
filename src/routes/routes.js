@@ -89,6 +89,7 @@ routes.get(`${baseUrl}/pengeluaran-unit/:uuid`, PengeluaranUnitController.getDet
 // KARTU STOK & MUTASI
 routes.get(`${baseUrl}/kartu-stok`, KartuStokController.getAll);
 routes.get(`${baseUrl}/mutasi`, RiwayatMutasiController.getAll);
+routes.post(`${baseUrl}/mutasi`, RiwayatMutasiController.create);
 
 // STOK ADJUSTMENT
 routes.get(`${baseUrl}/stok-adjustment`, StokAdjustmentController.getAll);
