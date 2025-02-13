@@ -11,16 +11,20 @@ export default class RiwayatMutasiValidation {
 
     static CREATE = z.object({
         faskes_uuid: z.string().min(1, required),
-        code: z.string().min(1, required),
         sumber_mutasi: z.string().min(1, required),
-        item_uuid: z.string().min(1, required),
-        exp_date: z.string().min(1, required),
-        keterangan: z.object(),
         petugas: z.string().min(1, required),
-        stok_awal: z.number(),
-        stok_mutasi: z.number(),
-        lokasi_stok_uuid: z.string().min(1, required),
-        jenis_stok_uuid: z.string().min(1, required),
+        code: z.string().min(1, required),
+        keterangan: z.object(),
+        items: z.array(z.object({
+            item_uuid: z.string().min(1, required),
+            exp_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+                message: "exp_date harus dalam format YYYY-MM-DD",
+            }),
+            stok_awal: z.number(),
+            stok_mutasi: z.number(),
+            lokasi_stok_uuid: z.string().min(1, required),
+            jenis_stok_uuid: z.string().min(1, required),
+        }))
 
     })
 }

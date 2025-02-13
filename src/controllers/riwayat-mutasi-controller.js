@@ -14,6 +14,7 @@ export default class RiwayatMutasiController {
     static async create(req, res, nextFunction) {
         try {
             req.body.faskes_uuid = req.author.faskesUuid;
+            req.body.petugas = req.author.username;
             const result = await RiwayatMutasiService.create(req.body);
             res.status(200).json(result);
         } catch (error) {

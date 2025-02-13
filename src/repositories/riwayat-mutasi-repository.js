@@ -53,6 +53,6 @@ export default class RiwayatMutasiRepository {
     }
 
     static async create(req) {
-        await RiwayatMutasiModel.create(req);
+        await RiwayatMutasiModel.bulkCreate(req);
     }
 }

@@ -43,6 +43,31 @@ export default class RiwayatMutasiService {
     static async create(req) {
         ZodValidator.validate(RiwayatMutasiValidation.CREATE, req);
 
-        await RiwayatMutasiRepository.create(req);
+        const mutasi = [];
+
+        req.items.forEach((item) => {
+            const existingStock = mutasi.find(
+                res => res.exp_date === item.exp_date &&
+                    res.item_uuid === item.item_uuid &&
+                    res.lokasi_stok_uuid === item.lokasi_stok_uuid &&
+                    res.jenis_stok_uuid === item.jenis_stok_uuid
+            );
+
+            if (existingStock) {
+                existingStock.stok_awal += item.stok_awal;
+                existingStock.stok_mutasi += item.stok_mutasi;
+            } else {
+                mutasi.push({
+                    ...item,
+                    faskes_uuid: req.faskes_uuid,
+                    sumber_mutasi: req.sumber_mutasi,
+                    petugas: req.petugas,
+                    code: req.code,
+                    keterangan: req.keterangan,
+                });
+            }
+        })
+
+        await RiwayatMutasiRepository.create(mutasi);
     }
 }
