@@ -4,13 +4,17 @@ import Pagination from "../helpers/pagination.js";
 import {
     RiwayatMutasiModel,
 } from "@adameds/model-sdk/inventory";
+import SequelizeInstance from "../configurations/sequelize-instance.js";
 
 export default class RiwayatMutasiRepository {
     static async getAll(req) {
         const whereRiwayat = {
             faskes_uuid: req.faskes_uuid,
             lokasi_stok_uuid: req.lokasi_stok_uuid,
-            created_at: {
+        }
+
+        if (req.start_date && req.end_date) {
+            whereRiwayat.created_at = {
                 [Op.between]: [req.start_date, req.end_date]
             }
         }
@@ -26,7 +30,7 @@ export default class RiwayatMutasiRepository {
         const option = {
             where: whereRiwayat,
             order: [['created_at', 'DESC']],
-            attributes: ['code', 'sumber_mutasi', 'created_at', 'exp_date', 'stok_awal', 'petugas', 'stok_mutasi', 'keterangan'],
+            attributes: ['code', 'sumber_mutasi', 'created_at', 'exp_date', 'stok_awal', 'petugas', 'stok_mutasi', 'keterangan', 'item_uuid'],
             include: [
                 {
                     model: ItemMedisModel,
@@ -52,7 +56,13 @@ export default class RiwayatMutasiRepository {
         return await Pagination.init(RiwayatMutasiModel, req, option);
     }
 
-    static async create(req) {
-        await RiwayatMutasiModel.bulkCreate(req);
+    static async create(req, transaction) {
+        try {
+            await RiwayatMutasiModel.bulkCreate(req, {transaction});
+            await transaction.commit();
+        } catch (e) {
+            await transaction.rollback();
+            throw e;
+        }
     }
 }

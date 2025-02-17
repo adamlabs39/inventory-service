@@ -95,6 +95,7 @@ export default class StockMedisRepository {
                     result.push({
                         stock_medis_uuid: stock.uuid,
                         quantity: remainingQuantity,
+                        previous_stock: stock.sisa_stok,
                         expired_date: stock.exp_date,
                     });
 
@@ -113,6 +114,7 @@ export default class StockMedisRepository {
                         stock_medis_uuid: stock.uuid,
                         quantity: stock.sisa_stok,
                         expired_date: stock.exp_date,
+                        previous_stock: stock.sisa_stok,
                     });
 
                     remainingQuantity = Math.abs(newStock);
@@ -130,7 +132,7 @@ export default class StockMedisRepository {
                         model: ItemMedisJenisStokModel,
                         as: "item_medis_jenis_stok",
                         required: true,
-                        attributes: ["uuid"],
+                        attributes: ["uuid", "item_medis_uuid", "jenis_stok_uuid"],
                         include: [
                             {
                                 model: ItemMedisModel,
@@ -318,5 +320,25 @@ export default class StockMedisRepository {
                 transaction
             })
         }
+    }
+
+    static async getForMutasi(req) {
+        return await StockMedisModel.findAll({
+            where: {
+                lokasi_stok_uuid: req.lokasi_stok_uuids,
+                jenis_stok_uuid: req.jenis_stok_uuids,
+                include: [
+                    {
+                        model: ItemMedisJenisStokModel,
+                        as: 'item_medis_jenis_stok',
+                        required: true,
+                        attributes: ['uuid', 'item_medis_uuid'],
+                        where: {
+                            item_medis_uuid: req.item_uuids,
+                        },
+                    }
+                ]
+            }
+        })
     }
 }

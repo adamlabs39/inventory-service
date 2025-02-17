@@ -4,10 +4,12 @@ import PermintaanUnitRepository from "../repositories/permintaan-unit-repository
 import BadRequestException from "../errors/bad-request-exception.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
 import PermintaanUnitItemRepository from "../repositories/permintaan-unit-item-repository.js";
-import { uuidv7 } from "uuidv7";
+import {uuidv7} from "uuidv7";
 import Utils from "../helpers/utils.js";
 import StockMedisRepository from "../repositories/stock-medis-repository.js";
 import KonfigurasiHargaRepository from "../repositories/konfigurasi-harga-repository.js";
+import RiwayatMutasiService from "./riwayat-mutasi-service.js";
+import RiwayatMutasiRepository from "../repositories/riwayat-mutasi-repository.js";
 
 export default class PermintaanUnitService {
     static async getAll(req) {
@@ -61,7 +63,7 @@ export default class PermintaanUnitService {
 
         const transaction = await sequelizeInstance.transaction();
 
-        const permintaan = await PermintaanUnitRepository.getDetail({ uuid: req.uuid });
+        const permintaan = await PermintaanUnitRepository.getDetail({uuid: req.uuid});
         const nonUsedItems = [];
         const halfUsedItems = [];
         const usedItems = [];
@@ -70,7 +72,7 @@ export default class PermintaanUnitService {
             const selectedItem = req.item.find((sel) => sel.uuid === item.uuid);
 
             if (!selectedItem) {
-                nonUsedItems.push({ ...item.dataValues });
+                nonUsedItems.push({...item.dataValues});
             } else {
                 if (selectedItem.quantity < item.dataValues.qty_permintaan) {
                     const remainingQuantity = item.dataValues.qty_permintaan - selectedItem.quantity;
@@ -81,21 +83,22 @@ export default class PermintaanUnitService {
                         id: undefined
                     });
                 } else {
-                    usedItems.push({ ...item.dataValues, qty_pengiriman: selectedItem.quantity });
+                    usedItems.push({...item.dataValues, qty_pengiriman: selectedItem.quantity});
                 }
             }
         });
 
         try {
-            // UPDATE CURRENT ITEMS
+            // region UPDATE CURRENT ITEMS
             for (const item of halfUsedItems) {
                 await PermintaanUnitItemRepository.update({
                     uuid: item.uuid,
                     qty_pengiriman: item.qty_pengiriman,
                 }, transaction);
             }
+            // endregion
 
-            // CREATE NEW PERMINTAAN & DELETE NON USED ITEMS IN CURRENT PERMINTAAN
+            // region CREATE NEW PERMINTAAN & DELETE NON USED ITEMS IN CURRENT PERMINTAAN
             const newPermintaan = permintaan.dataValues;
             newPermintaan.uuid = uuidv7();
             newPermintaan.no_permintaan = Utils.generate4Code('PRM');
@@ -117,12 +120,16 @@ export default class PermintaanUnitService {
                     qty_permintaan: item.remainingQty,
                 }, transaction);
             }
+            // endregion
 
-            //  REDUCE MEDICAL STOCKS
+            //  region REDUCE MEDICAL STOCKS
             const konfigurasiHarga = await KonfigurasiHargaRepository.get(req.faskes_uuid);
             const medicalStocks = [];
+            const mutasiItems = [];
 
-            for (const item of halfUsedItems) {
+            const allUsedItems = [...usedItems, ...halfUsedItems];
+
+            for (const item of allUsedItems) {
                 const items = await StockMedisRepository.reduceQuantity({
                     item_medis_uuid: item.item_uuid,
                     jenis_stok_uuid: newPermintaan.jenis_stok_uuid,
@@ -133,34 +140,50 @@ export default class PermintaanUnitService {
                 }, transaction);
 
                 medicalStocks.push(...items);
+
+                for (const reducedStock of items) {
+                    mutasiItems.push({
+                        item_uuid: item.item_uuid,
+                        exp_date: reducedStock.exp_date,
+                        stok_awal: reducedStock.previous_stock,
+                        stok_mutasi: reducedStock.quantity,
+                        jenis_stok_uuid: newPermintaan.jenis_stok_uuid,
+                        lokasi_stok_uuid: newPermintaan.lokasi_stok_awal_uuid,
+                    })
+                }
             }
+            // endregion
 
-            for (const item of usedItems) {
-                const items = await StockMedisRepository.reduceQuantity({
-                    item_medis_uuid: item.item_uuid,
-                    jenis_stok_uuid: newPermintaan.jenis_stok_uuid,
-                    quantity: item.qty_pengiriman,
-                    metode_pemotongan_stok: konfigurasiHarga.metode_pemotongan_stok,
-                    name: item.item_medis.name,
-                    lokasi_stok_uuid: newPermintaan.lokasi_stok_awal_uuid
-                }, transaction);
-
-                medicalStocks.push(...items);
-            }
-
-            // UPDATE PERMINTAAN
+            // region UPDATE PERMINTAAN
             await PermintaanUnitRepository.update({
                 uuid: req.uuid,
                 status:
                     nonUsedItems.length === 0 &&
-                        halfUsedItems.length === 0 &&
-                        permintaan.status === "request" ?
+                    halfUsedItems.length === 0 &&
+                    permintaan.status === "request" ?
                         "verified" : "verif_sebagian",
                 petugas_verifikasi: req.petugas_verifikasi,
                 total_item: usedItems.length + halfUsedItems.length,
                 medical_stocks: medicalStocks
             }, transaction);
+            // endregion
 
+            // region INSERT HISTORY MUTASI
+            await RiwayatMutasiService.create({
+                faskes_uuid: req.faskes_uuid,
+                sumber_mutasi: "inventory",
+                with_check_stock: true,
+                petugas: req.petugas_verifikasi,
+                code: newPermintaan.no_permintaan,
+                keterangan: {
+                    description: "Pengiriman Unit",
+                    // TODO : GET DESTINATION AND SOURCE DATA
+                    destination: "Farmasi",
+                    source: "Gudang",
+                },
+                items: mutasiItems
+            })
+            // endregion
 
             await transaction.commit();
         } catch (e) {
@@ -173,12 +196,18 @@ export default class PermintaanUnitService {
         ZodValidator.validate(PermintaanUnitValidation.KIRIM_PERMINTAAN, req);
 
         const konfigurasiHarga = await KonfigurasiHargaRepository.get(req.faskes_uuid);
-        const permintaan = await PermintaanUnitRepository.getDetail({ uuid: req.uuid });
+        const permintaan = await PermintaanUnitRepository.getDetail({uuid: req.uuid});
         const transaction = await sequelizeInstance.transaction();
 
         if (!permintaan.dataValues.medical_stocks) {
             throw new BadRequestException("Stok medis tidak ditemukan");
         }
+
+        const historyMutasi = await RiwayatMutasiRepository.getAll({
+            faskes_uuid: req.faskes_uuid,
+            lokasi_stok_uuid: permintaan.dataValues.lokasi_stok_awal_uuid,
+            search: permintaan.dataValues.no_permintaan
+        })
 
         try {
             let medicalStocks = await StockMedisRepository.getSome(permintaan.dataValues.medical_stocks.map((item) => item.stock_medis_uuid));
@@ -192,16 +221,15 @@ export default class PermintaanUnitService {
                 return {
                     ...item.dataValues,
                     lokasi_stok_uuid: permintaan.dataValues.lokasi_stok_tujuan_uuid,
-                    sisa_stok:quantity,
-                    stok:quantity,
+                    sisa_stok: quantity,
+                    stok: quantity,
                     uuid: uuidv7(),
-                    id : undefined,
+                    id: undefined,
                     harga_satuan: item.harga_satuan +
                         (item.harga_satuan * konfigurasiHarga.margin) +
                         (item.harga_satuan * konfigurasiHarga.ppn),
                 }
             });
-
 
             await StockMedisRepository.bulkCreate(medicalStocks, transaction);
 
@@ -211,6 +239,24 @@ export default class PermintaanUnitService {
                 petugas_pengiriman: req.petugas_pengiriman,
                 catatan_pengiriman: req.catatan_pengiriman
             }, transaction);
+
+            await RiwayatMutasiService.create({
+                faskes_uuid: req.faskes_uuid,
+                sumber_mutasi: "inventory",
+                petugas: historyMutasi.data[0]?.petugas,
+                code: permintaan.dataValues.no_permintaan,
+                keterangan: historyMutasi.data[0]?.keterangan,
+                items: historyMutasi.dataValues.map((item) => {
+                    return {
+                        item_uuid: item.item_uuid,
+                        exp_date: item.exp_date,
+                        stok_awal: item.stok_awal,
+                        stok_mutasi: item.stok_mutasi,
+                        jenis_stok_uuid: permintaan.jenis_stok_uuid,
+                        lokasi_stok_uuid: permintaan.lokasi_stok_tujuan_uuid,
+                    }
+                })
+            })
 
             await transaction.commit();
 

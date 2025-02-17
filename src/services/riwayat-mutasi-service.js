@@ -1,6 +1,7 @@
 import ZodValidator from "../validations/zod-validator.js";
 import RiwayatMutasiValidation from "../validations/riwayat-mutasi-validation.js";
 import RiwayatMutasiRepository from "../repositories/riwayat-mutasi-repository.js";
+import StockMedisRepository from "../repositories/stock-medis-repository.js";
 
 export default class RiwayatMutasiService {
     static async getAll(req) {
@@ -40,7 +41,7 @@ export default class RiwayatMutasiService {
         return result;
     }
 
-    static async create(req) {
+    static async create(req, transaction) {
         ZodValidator.validate(RiwayatMutasiValidation.CREATE, req);
 
         const mutasi = [];
@@ -68,6 +69,26 @@ export default class RiwayatMutasiService {
             }
         })
 
-        await RiwayatMutasiRepository.create(mutasi);
+        if (req.with_check_stock) {
+            const stocks = await StockMedisRepository.getForMutasi({
+                lokasi_stok_uuids: req.items.map(item => item.lokasi_stok_uuid),
+                item_uuids: req.items.map(item => item.item_uuid),
+                jenis_stok_uuids: req.items.map(item => item.jenis_stok_uuid),
+            })
+
+            req.items.forEach((item) => {
+                item.stok_awal = 0;
+                for (const stock of stocks) {
+                    if (stock.exp_date === item.exp_date &&
+                        stock.lokasi_stok_uuid === item.lokasi_stok_uuid &&
+                        stock.item_medis_jenis_stok?.item_medis_uuid === item.item_uuid &&
+                        stock.jenis_stok_uuid === item.jenis_stok_uuid) {
+                        item.stok_awal += stock.sisa_stok;
+                    }
+                }
+            })
+        }
+
+        await RiwayatMutasiRepository.create(mutasi, transaction);
     }
 }
