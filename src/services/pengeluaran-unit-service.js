@@ -8,8 +8,6 @@ import StockMedisRepository from "../repositories/stock-medis-repository.js";
 import BadRequestException from "../errors/bad-request-exception.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
 import RiwayatMutasiService from "./riwayat-mutasi-service.js";
-import {optional, z} from "zod";
-import {required} from "../validations/message-validation-error.js";
 
 export default class PengeluaranUnitService {
     static async create(req) {
@@ -92,6 +90,7 @@ export default class PengeluaranUnitService {
                             stok_mutasi: reducedStock.quantity,
                             jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
                             lokasi_stok_uuid: req.lokasi_stok_awal_uuid,
+                            type: "defisit"
                         })
 
                         mutasiItemsPelayanan.push({
@@ -100,6 +99,7 @@ export default class PengeluaranUnitService {
                             stok_mutasi: reducedStock.quantity,
                             jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
                             lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
+                            type: "surplus"
                         })
                     }
                 }
@@ -152,6 +152,7 @@ export default class PengeluaranUnitService {
                         description: req.jenis_pengeluaran,
                     },
                     items: mutasiStocks,
+                    type: "defisit"
                 })
             }
         } catch (e) {

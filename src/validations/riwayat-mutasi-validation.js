@@ -21,7 +21,7 @@ export default class RiwayatMutasiValidation {
             source: optional(z.string().min(1, required)),
         }),
         items: z.array(z.object({
-            // TODO : ADD STATUS IS SURPLUS OR DEFISIT
+            type: z.string().min(1, required),
             item_uuid: z.string().min(1, required),
             exp_date: z.optional(z.string().min(1, required)),
             stok_awal: z.optional(z.number()),

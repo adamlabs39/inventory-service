@@ -149,6 +149,7 @@ export default class PermintaanUnitService {
                         stok_mutasi: reducedStock.quantity,
                         jenis_stok_uuid: newPermintaan.jenis_stok_uuid,
                         lokasi_stok_uuid: newPermintaan.lokasi_stok_awal_uuid,
+                        type: "defisit"
                     })
                 }
             }
@@ -246,14 +247,15 @@ export default class PermintaanUnitService {
                 petugas: historyMutasi.data[0]?.petugas,
                 code: permintaan.dataValues.no_permintaan,
                 keterangan: historyMutasi.data[0]?.keterangan,
+                with_check_stock: true,
                 items: historyMutasi.dataValues.map((item) => {
                     return {
                         item_uuid: item.item_uuid,
                         exp_date: item.exp_date,
-                        stok_awal: item.stok_awal,
                         stok_mutasi: item.stok_mutasi,
                         jenis_stok_uuid: permintaan.jenis_stok_uuid,
                         lokasi_stok_uuid: permintaan.lokasi_stok_tujuan_uuid,
+                        type: "surplus"
                     }
                 })
             })

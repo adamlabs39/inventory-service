@@ -28,7 +28,7 @@ export default class RiwayatMutasiController {
 
 
         // 5. pengiriman unit ✅
-        // 6. pengeluaran unit
+        // 6. pengeluaran unit ✅
         // 7. stok adjustment
         // 8. stok opname
     }
