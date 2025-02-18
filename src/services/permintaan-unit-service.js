@@ -242,8 +242,6 @@ export default class PermintaanUnitService {
                 catatan_pengiriman: req.catatan_pengiriman
             }, transaction);
 
-            console.log(historyMutasi);
-
             await RiwayatMutasiService.create({
                 faskes_uuid: req.faskes_uuid,
                 sumber_mutasi: "inventory",
