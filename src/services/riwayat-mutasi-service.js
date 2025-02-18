@@ -51,7 +51,8 @@ export default class RiwayatMutasiService {
                 res => res.exp_date === item.exp_date &&
                     res.item_uuid === item.item_uuid &&
                     res.lokasi_stok_uuid === item.lokasi_stok_uuid &&
-                    res.jenis_stok_uuid === item.jenis_stok_uuid
+                    res.jenis_stok_uuid === item.jenis_stok_uuid &&
+                    res.type === item.type
             );
 
             if (existingStock) {
@@ -71,18 +72,20 @@ export default class RiwayatMutasiService {
 
         if (req.with_check_stock) {
             const stocks = await StockMedisRepository.getForMutasi({
-                lokasi_stok_uuids: req.items.map(item => item.lokasi_stok_uuid),
-                item_uuids: req.items.map(item => item.item_uuid),
-                jenis_stok_uuids: req.items.map(item => item.jenis_stok_uuid),
+                lokasi_stok_uuids: mutasi.map(item => item.lokasi_stok_uuid),
+                item_uuids: mutasi.map(item => item.item_uuid),
+                jenis_stok_uuids: mutasi.map(item => item.jenis_stok_uuid),
             })
 
-            req.items.forEach((item) => {
+
+            mutasi.forEach((item) => {
                 item.stok_awal = 0;
                 for (const stock of stocks) {
-                    if (stock.exp_date === item.exp_date &&
+                    if (stock.exp_date?.toISOString() === item.exp_date?.toISOString() &&
                         stock.lokasi_stok_uuid === item.lokasi_stok_uuid &&
                         stock.item_medis_jenis_stok?.item_medis_uuid === item.item_uuid &&
-                        stock.jenis_stok_uuid === item.jenis_stok_uuid) {
+                        stock.item_medis_jenis_stok?.jenis_stok_uuid === item.jenis_stok_uuid) {
+                        console.log(stock.sisa_stok, "sisa stok");
                         item.stok_awal += stock.sisa_stok;
                     }
                 }

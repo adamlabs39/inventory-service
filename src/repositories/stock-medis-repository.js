@@ -326,19 +326,19 @@ export default class StockMedisRepository {
         return await StockMedisModel.findAll({
             where: {
                 lokasi_stok_uuid: req.lokasi_stok_uuids,
-                jenis_stok_uuid: req.jenis_stok_uuids,
-                include: [
-                    {
-                        model: ItemMedisJenisStokModel,
-                        as: 'item_medis_jenis_stok',
-                        required: true,
-                        attributes: ['uuid', 'item_medis_uuid'],
-                        where: {
-                            item_medis_uuid: req.item_uuids,
-                        },
-                    }
-                ]
-            }
+            },
+            include: [
+                {
+                    model: ItemMedisJenisStokModel,
+                    as: 'item_medis_jenis_stok',
+                    required: true,
+                    attributes: ['uuid', 'item_medis_uuid', 'jenis_stok_uuid'],
+                    where: {
+                        item_medis_uuid: req.item_uuids,
+                        jenis_stok_uuid: req.jenis_stok_uuids
+                    },
+                }
+            ]
         })
     }
 }

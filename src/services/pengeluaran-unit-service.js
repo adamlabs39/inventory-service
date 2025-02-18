@@ -83,25 +83,23 @@ export default class PengeluaranUnitService {
 
                     stocks.push(stock);
 
-                    for (const reducedStock of stock.dataValues) {
-                        mutasiItemsInventory.push({
-                            item_uuid: reducedStock.item_medis_jenis_stok?.item_medis_uuid,
-                            exp_date: reducedStock.exp_date,
-                            stok_mutasi: reducedStock.quantity,
-                            jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
-                            lokasi_stok_uuid: req.lokasi_stok_awal_uuid,
-                            type: "defisit"
-                        })
+                    mutasiItemsInventory.push({
+                        item_uuid: stock.item_medis_jenis_stok?.item_medis_uuid,
+                        exp_date: stock.exp_date,
+                        stok_mutasi: item.qty,
+                        jenis_stok_uuid: stock.item_medis_jenis_stok?.jenis_stok_uuid,
+                        lokasi_stok_uuid: req.lokasi_stok_awal_uuid,
+                        type: "defisit"
+                    })
 
-                        mutasiItemsPelayanan.push({
-                            item_uuid: reducedStock.item_medis_jenis_stok?.item_medis_uuid,
-                            exp_date: reducedStock.exp_date,
-                            stok_mutasi: reducedStock.quantity,
-                            jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
-                            lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
-                            type: "surplus"
-                        })
-                    }
+                    mutasiItemsPelayanan.push({
+                        item_uuid: stock.item_medis_jenis_stok?.item_medis_uuid,
+                        exp_date: stock.exp_date,
+                        stok_mutasi: item.qty,
+                        jenis_stok_uuid: stock.item_medis_jenis_stok?.jenis_stok_uuid,
+                        lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
+                        type: "surplus"
+                    })
                 }
 
                 await StockMedisRepository.bulkCreate(stocks, transaction);
@@ -123,24 +121,24 @@ export default class PengeluaranUnitService {
                 const mutasiStocks = [];
 
                 for (const item of pengeluaranItemReq) {
-                    const reducedStocks = await StockMedisRepository.reduceQuantity({
+                    const reducedStock = await StockMedisRepository.reduceQuantity({
                         stock_medis_uuid: item.stock_uuid,
                         quantity: item.qty,
                     }, transaction);
 
-                    if (!reducedStocks) {
+                    if (!reducedStock) {
                         throw new BadRequestException("Stok medis tidak ditemukan");
                     }
 
-                    for (const reducedStock of reducedStocks) {
-                        mutasiStocks.push({
-                            item_uuid: reducedStock.item_medis_jenis_stok?.item_medis_uuid,
-                            exp_date: reducedStock.exp_date,
-                            stok_mutasi: reducedStock.quantity,
-                            jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
-                            lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
-                        })
-                    }
+                    mutasiStocks.push({
+                        item_uuid: reducedStock.item_medis_jenis_stok?.item_medis_uuid,
+                        exp_date: reducedStock.exp_date,
+                        stok_mutasi: item.qty,
+                        jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
+                        lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
+                        type: "defisit"
+                    })
+
                 }
 
                 await RiwayatMutasiService.create({
@@ -148,6 +146,7 @@ export default class PengeluaranUnitService {
                     sumber_mutasi: "inventory",
                     petugas: req.petugas_pengeluaran,
                     code: pengeluaranReq.no_pengeluaran,
+                    with_check_stock: true,
                     keterangan: {
                         description: req.jenis_pengeluaran,
                     },

@@ -57,12 +57,6 @@ export default class RiwayatMutasiRepository {
     }
 
     static async create(req, transaction) {
-        try {
-            await RiwayatMutasiModel.bulkCreate(req, {transaction});
-            await transaction.commit();
-        } catch (e) {
-            await transaction.rollback();
-            throw e;
-        }
+        await RiwayatMutasiModel.bulkCreate(req, {transaction});
     }
 }

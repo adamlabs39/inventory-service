@@ -17,6 +17,7 @@ export default class RiwayatMutasiSeeder {
                 "stok_awal": 10,
                 "stok_mutasi": 5,
                 "petugas": "admin",
+                "type": "defisit",
                 "keterangan": {
                     description: "Penjualan obat",
                 },
