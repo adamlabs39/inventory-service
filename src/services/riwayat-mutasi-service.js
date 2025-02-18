@@ -85,7 +85,6 @@ export default class RiwayatMutasiService {
                         stock.lokasi_stok_uuid === item.lokasi_stok_uuid &&
                         stock.item_medis_jenis_stok?.item_medis_uuid === item.item_uuid &&
                         stock.item_medis_jenis_stok?.jenis_stok_uuid === item.jenis_stok_uuid) {
-                        console.log(stock.sisa_stok, "sisa stok");
                         item.stok_awal += stock.sisa_stok;
                     }
                 }

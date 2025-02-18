@@ -64,6 +64,7 @@ export default class PermintaanUnitService {
         const transaction = await sequelizeInstance.transaction();
 
         const permintaan = await PermintaanUnitRepository.getDetail({uuid: req.uuid});
+        const noPermintaan = permintaan.dataValues.no_permintaan;
         const nonUsedItems = [];
         const halfUsedItems = [];
         const usedItems = [];
@@ -144,7 +145,7 @@ export default class PermintaanUnitService {
                 for (const reducedStock of items) {
                     mutasiItems.push({
                         item_uuid: item.item_uuid,
-                        exp_date: reducedStock.exp_date,
+                        exp_date: reducedStock.expired_date,
                         stok_awal: reducedStock.previous_stock,
                         stok_mutasi: reducedStock.quantity,
                         jenis_stok_uuid: newPermintaan.jenis_stok_uuid,
@@ -175,7 +176,7 @@ export default class PermintaanUnitService {
                 sumber_mutasi: "inventory",
                 with_check_stock: true,
                 petugas: req.petugas_verifikasi,
-                code: newPermintaan.no_permintaan,
+                code: noPermintaan,
                 keterangan: {
                     description: "Pengiriman Unit",
                     // TODO : GET DESTINATION AND SOURCE DATA
@@ -206,8 +207,8 @@ export default class PermintaanUnitService {
 
         const historyMutasi = await RiwayatMutasiRepository.getAll({
             faskes_uuid: req.faskes_uuid,
-            lokasi_stok_uuid: permintaan.dataValues.lokasi_stok_awal_uuid,
-            search: permintaan.dataValues.no_permintaan
+            code: permintaan.dataValues.no_permintaan,
+            limit: 100000
         })
 
         try {
@@ -237,25 +238,29 @@ export default class PermintaanUnitService {
             await PermintaanUnitRepository.update({
                 uuid: req.uuid,
                 status: "dikirim",
-                petugas_pengiriman: req.petugas_pengiriman,
+                petugas_pengiriman: req.petugas_kirim,
                 catatan_pengiriman: req.catatan_pengiriman
             }, transaction);
+
+            console.log(historyMutasi);
 
             await RiwayatMutasiService.create({
                 faskes_uuid: req.faskes_uuid,
                 sumber_mutasi: "inventory",
-                petugas: historyMutasi.data[0]?.petugas,
+                petugas: req.petugas_kirim,
                 code: permintaan.dataValues.no_permintaan,
-                keterangan: historyMutasi.data[0]?.keterangan,
+                keterangan: historyMutasi.data[0]?.keterangan ?? {},
                 with_check_stock: true,
-                items: historyMutasi.dataValues.map((item) => {
+                items: historyMutasi.data.map((item) => {
                     return {
                         item_uuid: item.item_uuid,
                         exp_date: item.exp_date,
                         stok_mutasi: item.stok_mutasi,
                         jenis_stok_uuid: permintaan.jenis_stok_uuid,
                         lokasi_stok_uuid: permintaan.lokasi_stok_tujuan_uuid,
-                        type: "surplus"
+                        type: "surplus",
+                        petugas: req.petugas_kirim,
+                        keterangan: item.keterangan
                     }
                 })
             })

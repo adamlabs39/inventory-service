@@ -9,7 +9,14 @@ export default class RiwayatMutasiRepository {
     static async getAll(req) {
         const whereRiwayat = {
             faskes_uuid: req.faskes_uuid,
-            lokasi_stok_uuid: req.lokasi_stok_uuid,
+        }
+
+        if (req.lokasi_stok_uuid) {
+            whereRiwayat.lokasi_stok_uuid = req.lokasi_stok_uuid;
+        }
+
+        if (req.code) {
+            whereRiwayat.code = req.code;
         }
 
         if (req.start_date && req.end_date) {
