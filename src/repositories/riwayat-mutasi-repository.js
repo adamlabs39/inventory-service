@@ -4,7 +4,6 @@ import Pagination from "../helpers/pagination.js";
 import {
     RiwayatMutasiModel,
 } from "@adameds/model-sdk/inventory";
-import SequelizeInstance from "../configurations/sequelize-instance.js";
 
 export default class RiwayatMutasiRepository {
     static async getAll(req) {
