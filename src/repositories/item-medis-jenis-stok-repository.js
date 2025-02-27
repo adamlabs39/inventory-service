@@ -130,4 +130,25 @@ export default class ItemMedisJenisStokRepository {
             ]
         });
     }
+
+    static async getForStokOpname(req) {
+        return await ItemMedisJenisStokModel.findAll({
+            where: {
+                faskes_uuid: req.faskes_uuid,
+                item_medis_uuid: req.item_medis_uuids,
+            },
+            attributes: ['uuid'],
+            include: [
+                {
+                    model: JenisStokModel,
+                    as: 'detail_stok',
+                    required: true,
+                    attributes: ['uuid', 'name'],
+                    where: {
+                        name: req.names
+                    }
+                },
+            ]
+        })
+    }
 }

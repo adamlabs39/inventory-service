@@ -9,6 +9,8 @@ import Utils from "../helpers/utils.js";
 import sequelizeInstance from "@adameds/model-sdk/instance";
 import StokOpnameItemRepository from "../repositories/stok-opname-item-repository.js";
 import StockMedisRepository from "../repositories/stock-medis-repository.js";
+import RiwayatMutasiService from "./riwayat-mutasi-service.js";
+import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
 
 export default class StokOpnameService {
     static async getAll(req) {
@@ -152,6 +154,15 @@ export default class StokOpnameService {
         // endregion
 
         try {
+            if (!req.stok_opname_uuid) {
+                req.stok_opname_uuid = uuidv7();
+                await StokOpnameItemRepository.destroyByStokOpname(req.stok_opname_uuid, transaction);
+            } else {
+                const stokOpname = await StokOpnameRepository.getDetail(req.stok_opname_uuid);
+                req.no_stok_opname = stokOpname.no_stok_opname;
+                req.petugas_so = stokOpname.petugas_so;
+            }
+
             if (req.type === "final") {
                 // region CHECK ITEM MEDIS CODE
                 const code = req.items.map(item => item.kode_item);
@@ -201,19 +212,39 @@ export default class StokOpnameService {
                     }
                 }
                 // endregion
+
+                // region INSERT INTO RIWAYAT MUTASI
+                const jenisStok = await ItemMedisJenisStokRepository.getForStokOpname({
+                    faskes_uuid: req.faskes_uuid,
+                    item_medis_uuids: itemMedises.map(item => item.uuid),
+                    names: req.items.map(item => item.jenis_stok),
+                })
+
+                await RiwayatMutasiService.create({
+                    faskes_uuid: req.faskes_uuid,
+                    sumber_mutasi: "inventory",
+                    with_check_stock: true,
+                    petugas: req.petugas_so,
+                    code: req.no_stok_opname,
+                    keterangan: {
+                        description: "Stok Opname"
+                    },
+                    items: req.items.map(item => {
+                        return {
+                            item_uuid: item.item_uuid,
+                            exp_date: item.ed,
+                            stok_awal: (item.stok_sistem ?? 0),
+                            stok_mutasi: item.stok_fisik,
+                            jenis_stok_uuid: jenisStok.find(jenis => jenis.item_medis_uuid === item.item_uuid && jenis.detail_stok.name === item.jenis_stok).uuid,
+                            lokasi_stok_uuid: req.lokasi_stok_uuid,
+                            type: (item.stok_sistem ?? 0) > item.stok_fisik ? "defisit" : "surplus"
+                        }
+                    })
+                })
+                // endregion
             }
 
             // region CREATE STOK OPNAME & ITEM
-            req.petugas_pengubah = req.petugas_so;
-            if (!req.stok_opname_uuid) {
-                req.stok_opname_uuid = uuidv7();
-                await StokOpnameItemRepository.destroyByStokOpname(req.stok_opname_uuid, transaction);
-            } else {
-                const stokOpname = await StokOpnameRepository.getDetail(req.stok_opname_uuid);
-                req.no_stok_opname = stokOpname.no_stok_opname;
-                req.petugas_so = stokOpname.petugas_so;
-            }
-
             await StokOpnameRepository.upsert({
                 uuid: req.stok_opname_uuid,
                 faskes_uuid: req.faskes_uuid,
