@@ -341,4 +341,19 @@ export default class StockMedisRepository {
             ]
         })
     }
+
+    static async getDetail(req) {
+        return await StockMedisModel.findOne({
+            where: {
+                uuid: req.uuid
+            },
+            include: [
+                {
+                    model: ItemMedisJenisStokModel,
+                    as: 'item_medis_jenis_stok',
+                    required: true,
+                }
+            ]
+        });
+    }
 }

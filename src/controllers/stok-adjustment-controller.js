@@ -24,6 +24,8 @@ export default class StokAdjustmentController {
 
     static async update(req, res, nextFunction) {
         try {
+            req.body.faskes_uuid = req.author.faskesUuid;
+            req.body.petugas_sa = req.author.username;
             await StokAdjustmentService.update(req.body);
             res.status(201).json(successResponse("data berhasil diupdate"));
         } catch (error) {
