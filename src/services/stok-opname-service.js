@@ -163,12 +163,12 @@ export default class StokOpnameService {
                 req.petugas_so = stokOpname.petugas_so;
             }
 
+            const code = req.items.map(item => item.kode_item);
+
+            const itemMedises = await ItemMedisRepository.getByCodes(code);
+
             if (req.type === "final") {
                 // region CHECK ITEM MEDIS CODE
-                const code = req.items.map(item => item.kode_item);
-
-                const itemMedises = await ItemMedisRepository.getByCodes(code);
-
                 code.forEach(
                     item => {
                         if (!itemMedises.find(itemMedis => itemMedis.code === item)) {
@@ -212,36 +212,6 @@ export default class StokOpnameService {
                     }
                 }
                 // endregion
-
-                // region INSERT INTO RIWAYAT MUTASI
-                const jenisStok = await ItemMedisJenisStokRepository.getForStokOpname({
-                    faskes_uuid: req.faskes_uuid,
-                    item_medis_uuids: itemMedises.map(item => item.uuid),
-                    names: req.items.map(item => item.jenis_stok),
-                })
-
-                await RiwayatMutasiService.create({
-                    faskes_uuid: req.faskes_uuid,
-                    sumber_mutasi: "inventory",
-                    with_check_stock: true,
-                    petugas: req.petugas_so,
-                    code: req.no_stok_opname,
-                    keterangan: {
-                        description: "Stok Opname"
-                    },
-                    items: req.items.map(item => {
-                        return {
-                            item_uuid: item.item_uuid,
-                            exp_date: item.ed,
-                            stok_awal: (item.stok_sistem ?? 0),
-                            stok_mutasi: item.stok_fisik,
-                            jenis_stok_uuid: jenisStok.find(jenis => jenis.item_medis_uuid === item.item_uuid && jenis.detail_stok.name === item.jenis_stok).uuid,
-                            lokasi_stok_uuid: req.lokasi_stok_uuid,
-                            type: (item.stok_sistem ?? 0) > item.stok_fisik ? "defisit" : "surplus"
-                        }
-                    })
-                })
-                // endregion
             }
 
             // region CREATE STOK OPNAME & ITEM
@@ -273,6 +243,47 @@ export default class StokOpnameService {
                 }
             }), transaction);
             // endregion
+
+            if (req.type === "final") {
+                // region INSERT INTO RIWAYAT MUTASI
+                const jenisStok = await ItemMedisJenisStokRepository.getForStokOpname({
+                    faskes_uuid: req.faskes_uuid,
+                    item_medis_uuids: itemMedises.map(item => item.uuid),
+                    names: req.items.map(item => item.jenis_stok),
+                })
+
+                for (const item of req.items) {
+                    const isItemExist = jenisStok.find(jenis => jenis.item_medis_uuid === item.item_uuid && jenis.detail_stok.name === item.jenis_stok);
+                    if (!isItemExist) {
+                        throw new BadRequestException(`Jenis stok ${item.jenis_stok} tidak ditemukan`);
+                    }
+
+                    item.ed = new Date(item.ed);
+                }
+
+                await RiwayatMutasiService.create({
+                    faskes_uuid: req.faskes_uuid,
+                    sumber_mutasi: "inventory",
+                    with_check_stock: true,
+                    petugas: req.petugas_so,
+                    code: req.no_stok_opname,
+                    keterangan: {
+                        description: "Stok Opname"
+                    },
+                    items: req.items.map(item => {
+                        return {
+                            item_uuid: itemMedises.find(itemMedis => itemMedis.code === item.kode_item).uuid,
+                            exp_date: item.ed,
+                            stok_awal: (item.stok_sistem ?? 0),
+                            stok_mutasi: item.stok_fisik,
+                            jenis_stok_uuid: jenisStok.find(jenis => jenis.item_medis_uuid === item.item_uuid && jenis.detail_stok.name === item.jenis_stok).uuid,
+                            lokasi_stok_uuid: req.lokasi_stok_uuid,
+                            type: (item.stok_sistem ?? 0) > item.stok_fisik ? "defisit" : "surplus"
+                        }
+                    })
+                })
+                // endregion
+            }
 
             await transaction.commit();
         } catch (e) {

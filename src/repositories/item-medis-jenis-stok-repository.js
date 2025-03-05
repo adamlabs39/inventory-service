@@ -142,7 +142,7 @@ export default class ItemMedisJenisStokRepository {
                 {
                     model: JenisStokModel,
                     as: 'detail_stok',
-                    required: true,
+                    required: false,
                     attributes: ['uuid', 'name'],
                     where: {
                         name: req.names

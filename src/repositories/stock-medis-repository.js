@@ -241,11 +241,12 @@ export default class StockMedisRepository {
         return result;
     }
 
-    static async update(req) {
+    static async update(req, transaction) {
         const result = await StockMedisModel.update(req, {
             where: {
                 uuid: req.uuid
-            }
+            },
+            transaction
         });
 
         if (result[0] === 0) {

@@ -6,7 +6,7 @@ export default class ItemMedisRepository {
             where: {
                 code: codes
             },
-            attributes: ['code'],
+            attributes: ['code', 'uuid'],
         })
     }
 }

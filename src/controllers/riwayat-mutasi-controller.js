@@ -21,15 +21,15 @@ export default class RiwayatMutasiController {
             nextFunction(error);
         }
 
-        // 1. penjualan obat
-        // 2. verifikasi resep dokter
-        // 3. retur alkes & obat
-        // 4. verifikasi farmasi ruangan
+        // 1. penjualan obat ✅
+        // 2. verifikasi resep dokter ✅
+        // 3. retur alkes & obat ✅
+        // 4. verifikasi farmasi ruangan ✅
 
 
         // 5. pengiriman unit ✅
         // 6. pengeluaran unit ✅
-        // 7. stok adjustment
-        // 8. stok opname
+        // 7. stok adjustment ✅
+        // 8. stok opname ✅
     }
 }
