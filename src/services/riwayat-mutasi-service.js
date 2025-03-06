@@ -44,6 +44,12 @@ export default class RiwayatMutasiService {
     static async create(req, transaction) {
         ZodValidator.validate(RiwayatMutasiValidation.CREATE, req);
 
+        for (const item of req.items) {
+            if (item.exp_date && typeof item.exp_date === "string") {
+                item.exp_date = new Date(item.exp_date);
+            }
+        }
+        
         const mutasi = [];
 
         req.items.forEach((item) => {

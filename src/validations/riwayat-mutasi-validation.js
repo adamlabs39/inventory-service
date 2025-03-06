@@ -23,7 +23,7 @@ export default class RiwayatMutasiValidation {
         items: z.array(z.object({
             type: z.string().min(1, required),
             item_uuid: z.string().min(1, required),
-            exp_date: z.optional(z.date()),
+            exp_date: z.optional(z.date().or(z.string().min(1, required))),
             stok_awal: z.optional(z.number()),
             stok_mutasi: z.number(),
             lokasi_stok_uuid: z.string().min(1, required),
