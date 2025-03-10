@@ -158,8 +158,6 @@ export default class PengadaanBarangService {
             await tr.commit();
             return purchaseOrder;
         } catch (e) {
-            console.log("errorss_edit_pengadaan_barang", e);
-
             await tr.rollback();
             throw new InternalServerException(e.message);
         }

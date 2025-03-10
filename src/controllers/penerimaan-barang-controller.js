@@ -11,8 +11,6 @@ export default class PenerimaanBarangController {
             const result = await PenerimaanBarangService.orderPenerimaan(req.body);
             res.status(201).json(successResponse("data berhasil dibuat", result));
         } catch (error) {
-            console.log("error", error);
-
             nextFunction(error);
         }
     }

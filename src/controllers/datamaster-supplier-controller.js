@@ -9,7 +9,6 @@ export default class DatamasterSupplierController {
             await DatamasterSupplierService.create(req.body);
             res.status(201).json(successResponse("data berhasil dibuat"));
         } catch (error) {
-            console.log("errorsss", error);
             nextFunction(error);
         }
     }
@@ -54,8 +53,6 @@ export default class DatamasterSupplierController {
             await DatamasterSupplierService.update(req.body);
             res.status(200).json(successResponse("data berhasil diupdate"));
         } catch (error) {
-            console.log("error", error);
-
             nextFunction(error);
         }
     }

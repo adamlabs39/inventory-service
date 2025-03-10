@@ -138,8 +138,6 @@ export default class PenerimaanBarangService {
                     }));
 
                 if (newItem.length > 0) {
-                    console.log("new_item", newItem);
-
                     await InventoryBarangRepository.bulkCreate(newItem, tr);
                 }
 
@@ -163,8 +161,6 @@ export default class PenerimaanBarangService {
             await tr.commit();
             return purchaseOrder;
         } catch (e) {
-            console.log("errorss", e);
-
             await tr.rollback();
             throw new InternalServerException(e.message);
         }

@@ -41,8 +41,6 @@ export default class PengadaanBarangController {
             await PengadaanBarangService.cancelPembelianBarang(req.body);
             res.status(200).json(successResponse("data berhasil dibatalkan"));
         } catch (error) {
-            console.log("error", error);
-
             nextFunction(error);
         }
     }
@@ -55,8 +53,6 @@ export default class PengadaanBarangController {
             await PengadaanBarangService.update(req.body);
             res.status(200).json(successResponse("data berhasil diupdate"));
         } catch (error) {
-            console.log("errorqwe", error);
-
             nextFunction(error);
         }
     }
