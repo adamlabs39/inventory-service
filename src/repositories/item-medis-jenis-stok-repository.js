@@ -151,4 +151,15 @@ export default class ItemMedisJenisStokRepository {
             ]
         })
     }
+
+    static async getForPengadaanBarang(req) {
+        return await ItemMedisJenisStokModel.findAll({
+            where: {
+                faskes_uuid: req.faskes_uuid,
+                item_medis_uuid: req.item_medis_uuids,
+                jenis_stok_uuid: req.jenis_stok_uuid,
+            },
+            attributes: ['uuid', 'jenis_stok_uuid', 'item_medis_uuid'],
+        })
+    }
 }
