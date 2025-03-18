@@ -10,8 +10,6 @@ import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-
 
 export default class PenerimaanBarangService {
     static async orderPenerimaan(req) {
-        const order_penerimaan = [];
-
         ZodValidator.validate(InventoryValidation.DATA_SATUAN, req);
 
         const tr = await sequelizeInstance.transaction();

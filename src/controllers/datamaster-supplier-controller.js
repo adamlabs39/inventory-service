@@ -50,6 +50,7 @@ export default class DatamasterSupplierController {
         try {
             const {uuid} = req.params;
             req.body.uuid = uuid;
+            req.body.faskes_uuid = req.author.faskesUuid;
             await DatamasterSupplierService.update(req.body);
             res.status(200).json(successResponse("data berhasil diupdate"));
         } catch (error) {

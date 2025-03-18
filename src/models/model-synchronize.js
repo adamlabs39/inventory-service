@@ -1,4 +1,6 @@
 import {
+    MasterSupplierKategoriItemModel,
+    MasterSupplierModel,
     PengeluaranUnitItemModel,
     PengeluaranUnitModel,
     PermintaanUnitItemModel,
@@ -7,7 +9,8 @@ import {
 
 const MODELMERGE = [
     // PembelianBarangSupplierModel,
-    // MasterSupplierModel,
+    MasterSupplierModel,
+    MasterSupplierKategoriItemModel,
     PermintaanUnitModel,
     PermintaanUnitItemModel,
     PengeluaranUnitModel,

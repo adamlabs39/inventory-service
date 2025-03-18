@@ -55,12 +55,28 @@ export default class DatamasterSupplierService {
         return await DatamasterSupplierRepository.getAllWithoutPagination(req);
     }
 
-    static update(req) {
+    static async update(req) {
         let validData = ZodValidator.validate(
             DatamasterValidation.UPDATE_SUPPLIER,
             req
         );
-        return DatamasterSupplierRepository.update(validData);
+
+        const transaction = await sequelizeInstance.transaction();
+
+        try {
+            await DatamasterSupplierRepository.update(validData, transaction);
+            await DatamasterSupplierRepository.deleteAllSupplierItem(validData.uuid, transaction);
+            await DatamasterSupplierRepository.bulkCreateSupplierItem(validData.supplier_items.map((item) => {
+                item.supllier_uuid = validData.uuid;
+                item.faskes_uuid = validData.faskes_uuid;
+                return item;
+            }), transaction);
+
+            await transaction.commit();
+        } catch (e) {
+            await transaction.rollback();
+            throw new BadRequestException("gagal update supplier",);
+        }
     }
 
     static delete(req) {
