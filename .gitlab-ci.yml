@@ -21,4 +21,4 @@ build-prod:
   only:
     - prod-deployment
   script:
-    - docker compose --env-file $(HOME)/adameds/prod/.env.inventory up -d
+    - docker compose --env-file $HOME/adameds/prod/.env.inventory up -d
