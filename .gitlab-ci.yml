@@ -17,8 +17,8 @@ build-prod:
   before_script:
     - echo "@adameds:registry=https://gitlab.com/api/v4/groups/93029767/-/packages/npm/" >> .npmrc
     - echo "//gitlab.com/api/v4/groups/93029767/-/packages/npm/:_authToken=$AUTH_TOKEN" >> .npmrc
-    - docker compose --env-file /home/engineer/adameds/prod/.env.inventory down --rmi all
+    - docker compose --env-file $HOME/adameds/prod/.env.inventory down --rmi all
   only:
     - prod-deployment
   script:
-    - docker compose --env-file /home/engineer/adameds/prod/.env.inventory up -d
+    - docker compose --env-file $(HOME)/adameds/prod/.env.inventory up -d
