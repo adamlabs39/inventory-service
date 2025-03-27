@@ -13,9 +13,6 @@ build-deploy:
     - dev-deployment
   script:
     - docker compose --env-file /home/engineer/adameds/.env.inventory up -d
-  variables:
-    GIT_SSL_NO_VERIFY: "true"
-    CI_SERVER_TLS_CA_FILE: ""
 
 build-prod:
   stage: build-deploy
@@ -29,6 +26,3 @@ build-prod:
     - prod-deployment
   script:
     - docker compose -f prod-compose.yml --env-file /home/gitlab-runner/adameds/.env.inventory up -d
-  variables:
-    GIT_SSL_NO_VERIFY: "true"
-    CI_SERVER_TLS_CA_FILE: ""
