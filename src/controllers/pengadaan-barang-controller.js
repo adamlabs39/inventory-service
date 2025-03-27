@@ -34,6 +34,17 @@ export default class PengadaanBarangController {
         }
     }
 
+    static async getDetail(req, res, nextFunction) {
+        try {
+            const {uuid} = req.params;
+            req.body.uuid = uuid;
+            const result = await PengadaanBarangService.getDetail(req.body);
+            res.status(200).json(successResponse("data berhasil didapat", result));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
+
     static async cancelPembelianBarang(req, res, nextFunction) {
         try {
             const {uuid} = req.params;

@@ -52,6 +52,10 @@ routes.get(
     `${baseUrl}/pengadaan/pembelian-barang`,
     PengadaanBarangController.getAll
 );
+routes.get(
+    `${baseUrl}/pengadaan/pembelian-barang/:uuid`,
+    PengadaanBarangController.getDetail
+);
 routes.put(
     `${baseUrl}/pengadaan/pembelian-barang/:uuid`,
     PengadaanBarangController.update

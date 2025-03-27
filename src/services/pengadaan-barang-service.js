@@ -7,6 +7,8 @@ import Utils from "../helpers/utils.js";
 import {uuidv7} from "uuidv7";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 
+import NotfoundException from "../errors/notfound-exception.js";
+
 export default class PengadaanBarangService {
     static async orderBarang(req) {
         const transaction = await sequelizeInstance.transaction();
@@ -90,6 +92,40 @@ export default class PengadaanBarangService {
     static async getAll(req) {
         ZodValidator.validate(InventoryValidation.GET_FILTER, req);
         return await InventoryBarangRepository.getAll(req);
+    }
+
+    static async getDetail(req) {
+        const result = await InventoryBarangRepository.getDetail(req);
+
+        if (!result) {
+            throw new NotfoundException("Data tidak ditemukan");
+        }
+
+        return {
+            no_pembelian: result.no_po ?? "",
+            tanggal_pembelian: result.tanggal_pembelian ?? 0,
+            supplier: result.spplr?.name ?? "",
+            lokasi: result.lks?.name ?? "",
+            jenis_item: result.jenis_item ?? "",
+            payment_method: result.metode_pembelian ?? "",
+            kategori_item: result.kategori_item ?? "",
+            cito: result.isCito ? "cito" : "-",
+            jenis_stok: result.jenis_stok?.name ?? "",
+            catatan: result.catatan_po ?? "",
+            items: result.pbsu?.map((item) => ({
+                total_harga: item.total_harga ?? 0,
+                harga_satuan: item.harga_satuan ?? 0,
+                qty_order: item.qty_order ?? 0,
+                satuan_beli: `${item.cnvrsn?.satuan_pembelian ?? "-"}/${item.cnvrsn?.konversi ?? ""} ${item.cnvrsn?.satuan_penggunaan ?? "-"}`,
+                nama: item.item_medis?.name ?? "",
+            })) ?? [],
+            total_item: result.total_item ?? 0,
+            diskon: result.diskon ?? 0,
+            materai: result.materai ?? 0,
+            ppn: result.ppn ?? 0,
+            grand_total: result.grand_total ?? 0,
+            petugas_pembuat_po: result.petugas_pembuat_po ?? "",
+        }
     }
 
     static cancelPembelianBarang(req) {
