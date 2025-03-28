@@ -31,23 +31,17 @@ export default class PengadaanBarangService {
                 metode_pembelian: req.metode_pembelian,
                 catatan_po: req.catatan_po,
                 isCito: req.is_cito,
-                total_item: req.total_item,
+                total_item: req.items.length,
                 diskon: req.diskon ? req.diskon : 0,
                 materai: req.materai ? req.materai : 0,
                 ppn: req.ppn,
-                grand_total: req.grand_total,
+                grand_total: req.items.reduce((acc, item) => acc + (item.qty_order * item.harga_satuan), 0),
                 petugas_pembuat_po: req.petugas_pembuat_po,
                 petugas_pembuat_po_uuid: req.petugas_pembuat_po_uuid,
                 status: "pending",
-                alasan_batal: req.alasan_batal,
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
                 tanggal_penerimaan: req.tanggal_penerimaan,
-                no_faktur: req.no_faktur,
-                tanggal_faktur: req.tanggal_faktur,
                 catatan_penerimaan: req.catatan_penerimaan,
-                petugas_pengirim: req.petugas_pengirim,
-                petugas_penerima: req.petugas_penerima,
-                petugas_penerima_uuid: req.petugas_penerima_uuid,
                 ongkos_kirim: req.ongkos_kirim,
             };
 
@@ -65,10 +59,9 @@ export default class PengadaanBarangService {
             for (const item of req.items) {
                 item.pembelian_barang_supplier_uuid = order_pengadaan_barang_uuid;
                 item.faskes_uuid = req.faskes_uuid;
+                item.total_harga = item.qty_order * item.harga_satuan;
 
                 // ZodValidator.validate(AlkesValidation.CREATE_ALKES_ITEM, item);
-
-                delete item.name;
                 const data_pembelian_item =
                     await InventoryBarangRepository.createPembelianBarangItem(
                         item,

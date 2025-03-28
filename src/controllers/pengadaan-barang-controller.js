@@ -5,6 +5,8 @@ export default class PengadaanBarangController {
     static async create(req, res, nextFunction) {
         try {
             req.body.faskes_uuid = req.author.faskesUuid;
+            req.body.petugas_pembuat_po = req.author.username;
+            req.body.petugas_pembuat_po_uuid = req.author.user_uuid;
             const result = await PengadaanBarangService.orderBarang(req.body);
             res.status(201).json(successResponse("data berhasil dibuat", result));
         } catch (error) {
