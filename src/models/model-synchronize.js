@@ -1,14 +1,23 @@
 import {
     MasterSupplierKategoriItemModel,
     MasterSupplierModel,
+    PembelianBarangSupplierItemModel,
+    PembelianBarangSupplierModel,
     PengeluaranUnitItemModel,
     PengeluaranUnitModel,
     PermintaanUnitItemModel,
-    PermintaanUnitModel, ReturUnitItemModel, ReturUnitModel, RiwayatMutasiModel, StokOpnameItemModel, StokOpnameModel,
+    PermintaanUnitModel, ReturSupplierItemModel,
+    ReturSupplierModel,
+    ReturUnitItemModel,
+    ReturUnitModel,
+    RiwayatMutasiModel,
+    StokOpnameItemModel,
+    StokOpnameModel,
 } from "@adameds/model-sdk/inventory";
 
 const MODELMERGE = [
-    // PembelianBarangSupplierModel,
+    PembelianBarangSupplierModel,
+    PembelianBarangSupplierItemModel,
     MasterSupplierModel,
     MasterSupplierKategoriItemModel,
     PermintaanUnitModel,
@@ -19,7 +28,9 @@ const MODELMERGE = [
     StokOpnameModel,
     StokOpnameItemModel,
     ReturUnitModel,
-    ReturUnitItemModel
+    ReturUnitItemModel,
+    ReturSupplierModel,
+    ReturSupplierItemModel
 ];
 
 export default MODELMERGE;

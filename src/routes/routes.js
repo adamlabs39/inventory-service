@@ -10,6 +10,7 @@ import StokAdjustmentController from "../controllers/stok-adjustment-controller.
 import RiwayatMutasiController from "../controllers/riwayat-mutasi-controller.js";
 import StokOpnameController from "../controllers/stok-opname-controller.js";
 import PenerimaanReturController from "../controllers/penerimaan-retur-controller.js";
+import ReturPengembalianController from "../controllers/retur-pengembalian-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -111,5 +112,14 @@ routes.post(`${baseUrl}/stok-opname/delete-items`, StokOpnameController.deleteIt
 // PENERIMAAN RETUR
 routes.get(`${baseUrl}/penerimaan-retur-unit`, PenerimaanReturController.getAll);
 routes.get(`${baseUrl}/penerimaan-retur-unit/:uuid`, PenerimaanReturController.getDetail);
+
+
+// RETUR SUPPLIER
+routes.get(`${baseUrl}/retur-supplier`, ReturPengembalianController.getAll);
+routes.get(`${baseUrl}/retur-supplier/available-faktur`, ReturPengembalianController.getAvailableFaktur);
+routes.get(`${baseUrl}/retur-supplier/available-faktur/:uuid`, ReturPengembalianController.getFaktur);
+routes.get(`${baseUrl}/retur-supplier/:uuid`, ReturPengembalianController.getByUuid);
+routes.post(`${baseUrl}/retur-supplier`, ReturPengembalianController.create);
+routes.put(`${baseUrl}/retur-supplier/:uuid`, ReturPengembalianController.acceptReplacement);
 
 export default routes;

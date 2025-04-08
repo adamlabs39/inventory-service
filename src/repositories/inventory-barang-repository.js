@@ -281,23 +281,45 @@ export default class InventoryBarangRepository {
         );
     }
 
-    // edit alkes item
-    static async editAlkesItem(req, transaction) {
-        if (!transaction) {
-            transaction = await sequelizeInstance.transaction();
-        }
-
-        const affectedRow = await OrderAlkesItemModel.update(req, {
+    static async getForRetur(req) {
+        const option = {
             where: {
-                uuid: req.uuid,
+                faskes_uuid: req.faskes_uuid,
+                is_return: null,
             },
-            transaction: transaction,
-        });
+            include: {
+                model: MasterSupplierModel,
+                as: 'spplr',
+                required: false,
+                attributes: ['name']
+            }
+        };
 
-        if (affectedRow[0] === 0) {
-            throw new InternalServerException("Tidak ada data yang diubah");
+        if (req.search) {
+            option.where.no_faktur = {[Op.iLike]: `%${req.search || ""}%`};
         }
 
-        return affectedRow;
+        if (req.start_date && req.end_date) {
+            option.where.tanggal_faktur = {
+                [Op.gte]: toEpochDate(req.start_date),
+                [Op.lte]: toEpochDate(req.end_date),
+            }
+        }
+
+        return await Pagination.init(PembelianBarangSupplierModel, req, option);
+    }
+
+    static async changeReturnStatus(req, transaction) {
+        return await PembelianBarangSupplierModel.update(
+            {
+                is_return: true,
+            },
+            {
+                where: {
+                    uuid: req.uuid,
+                },
+                transaction
+            }
+        );
     }
 }

@@ -96,6 +96,9 @@ export default class PengadaanBarangService {
 
         return {
             uuid: req.uuid,
+            jenis_stok_uuid: result.jenis_stok_uuid ?? "",
+            supplier_uuid: result.supplier_uuid ?? "",
+            lokasi_stok_uuid: result.lokasi_stok_uuid ?? "",
             no_pembelian: result.no_po ?? "",
             tanggal_pembelian: result.tanggal_pembelian ?? 0,
             supplier: result.spplr?.name ?? "",
