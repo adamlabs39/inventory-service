@@ -26,7 +26,7 @@ export default class ReturPengembalianController {
             req.body.faskes_uuid = req.author.faskesUuid;
             req.body.petugas_retur = req.author.username;
             req.body.petugas_retur_uuid = req.author.user_uuid;
-            const data = await ReturSupplierService.create(req.body);
+            await ReturSupplierService.create(req.body);
             res.status(201).json(successResponse("data berhasil disimpan"));
         } catch (error) {
             nextFunction(error);
