@@ -152,8 +152,4 @@ export default class ReturSupplierRepository {
             throw new Error("Data dengan id ini tidak ditemukan");
         }
     }
-
-    static async createReplacements(req, transaction) {
-        // TODO : bulk create replacements
-    }
 }
