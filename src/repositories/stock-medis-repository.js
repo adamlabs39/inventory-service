@@ -451,7 +451,7 @@ export default class StockMedisRepository {
             where: {
                 item_medis_jenis_stok_uuid: req.item_medis_jenis_stok_uuid,
             },
-            attributes: ["exp_date", "harga_satuan", "created_at"],
+            attributes: ["exp_date", "harga_satuan", "created_at", "no_po"],
             order: [["created_at", "DESC"]],
         })
     }

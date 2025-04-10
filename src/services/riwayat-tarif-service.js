@@ -69,6 +69,7 @@ export default class RiwayatTarifService {
                     harga_dasar: item.harga_satuan,
                     hja: item.harga_satuan,
                     hpp: item.harga_satuan,
+                    no_po: item.no_po,
                 }
             }) ?? [],
         }
