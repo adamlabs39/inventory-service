@@ -1,7 +1,14 @@
 import {Op} from "sequelize";
 import BadRequestException from "../errors/bad-request-exception.js";
 import {StockMedisModel} from "@adameds/model-sdk/inventory";
-import {ItemMedisJenisStokModel, ItemMedisModel, JenisStokModel} from "@adameds/model-sdk/farmasi";
+import {
+    ConversionModel,
+    ItemMedisJenisStokModel,
+    ItemMedisModel,
+    JenisStokModel, ManufactureModel,
+    SatuanModel
+} from "@adameds/model-sdk/farmasi";
+import Pagination from "../helpers/pagination.js";
 
 export default class StockMedisRepository {
     static async reduceQuantity(req, t) {
@@ -353,8 +360,99 @@ export default class StockMedisRepository {
                     model: ItemMedisJenisStokModel,
                     as: 'item_medis_jenis_stok',
                     required: true,
+                    include: [
+                        {
+                            model: ItemMedisModel,
+                            as: 'item_medis',
+                            required: false,
+                            attributes: ['code', 'jenis_item'],
+                            include: [
+                                {
+                                    model: SatuanModel,
+                                    as: 'satuan_penggunaan',
+                                    required: false,
+                                    attributes: ['name']
+                                },
+                                {
+                                    model: ManufactureModel,
+                                    as: 'manufacture',
+                                    required: false,
+                                    attributes: ['name']
+                                }
+                            ]
+                        },
+                        {
+                            model: JenisStokModel,
+                            as: 'detail_stok',
+                            required: false,
+                            attributes: ['name'],
+                        }
+                    ]
                 }
             ]
         });
+    }
+
+    static async getRiwayatTarif(req) {
+        const option = {
+            where: {
+                faskes_uuid: req.faskes_uuid
+            },
+            attributes: ["uuid", "stok", "exp_date", "harga_satuan"],
+            include: [
+                {
+                    model: ItemMedisJenisStokModel,
+                    as: 'item_medis_jenis_stok',
+                    required: true,
+                    attributes: ['uuid', 'item_medis_uuid', 'jenis_stok_uuid'],
+                    where: {
+                        jenis_stok_uuid: {
+                            [Op.iLike]: `%${req.jenis_stok_uuid ?? ""}%`
+                        },
+                    },
+                    include: [
+                        {
+                            model: ItemMedisModel,
+                            as: 'item_medis',
+                            required: true,
+                            attributes: ['name', 'jenis_item'],
+                            where: {
+                                [Op.or]: [
+                                    {name: {[Op.iLike]: `%${req.search ?? ""}%`}},
+                                    {code: {[Op.iLike]: `%${req.search ?? ""}%`}},
+                                ],
+                                jenis_item: {
+                                    [Op.in]: req.jenis_item ? [req.jenis_item] : ['obat', 'alkes'],
+                                }
+                            }
+                        },
+                        {
+                            model: JenisStokModel,
+                            as: 'detail_stok',
+                            required: false,
+                            attributes: ['name'],
+                        }
+                    ]
+                },
+                {
+                    model: ConversionModel,
+                    as: 'konversi',
+                    required: false,
+                    attributes: ['satuan_penggunaan'],
+                }
+            ]
+        }
+
+        return await Pagination.init(StockMedisModel, req, option);
+    }
+
+    static async getPurchaseHistory(req) {
+        return await StockMedisModel.findAll({
+            where: {
+                item_medis_jenis_stok_uuid: req.item_medis_jenis_stok_uuid,
+            },
+            attributes: ["exp_date", "harga_satuan", "created_at"],
+            order: [["created_at", "DESC"]],
+        })
     }
 }

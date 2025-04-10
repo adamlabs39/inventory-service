@@ -11,6 +11,7 @@ import RiwayatMutasiController from "../controllers/riwayat-mutasi-controller.js
 import StokOpnameController from "../controllers/stok-opname-controller.js";
 import PenerimaanReturController from "../controllers/penerimaan-retur-controller.js";
 import ReturPengembalianController from "../controllers/retur-pengembalian-controller.js";
+import RiwayatTarifController from "../controllers/riwayat-tarif-controller.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v1";
@@ -121,5 +122,9 @@ routes.get(`${baseUrl}/retur-supplier/available-faktur/:uuid`, ReturPengembalian
 routes.get(`${baseUrl}/retur-supplier/:uuid`, ReturPengembalianController.getByUuid);
 routes.post(`${baseUrl}/retur-supplier`, ReturPengembalianController.create);
 routes.put(`${baseUrl}/retur-supplier/:uuid`, ReturPengembalianController.acceptReplacement);
+
+// RIWAYAT TARIF
+routes.get(`${baseUrl}/riwayat-tarif`, RiwayatTarifController.getAll);
+routes.get(`${baseUrl}/riwayat-tarif/:uuid`, RiwayatTarifController.getByUuid);
 
 export default routes;
