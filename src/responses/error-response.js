@@ -1,6 +1,6 @@
-export default function errorResponse(message) {
-  return {
-    status: "error",
-    message: message,
-  };
+export default function errorResponse(message, errors) {
+    return {
+        message: message,
+        errors
+    };
 }

@@ -63,7 +63,6 @@ export default class DatamasterValidation {
                     try {
                         return isCodeUnique(codes);
                     } catch (err) {
-                        console.error("Error validasi unik:", err);
                         return false; // Gagal validasi
                     }
                 },

@@ -7,7 +7,7 @@ import {
     MasterSupplierModel,
     StockMedisModel,
 } from "@adameds/model-sdk/inventory";
-import {ConversionModel} from "@adameds/model-sdk/farmasi";
+import {ConversionModel, ItemMedisModel, JenisStokModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
 
 PembelianBarangSupplierModel.hasMany(PembelianBarangSupplierItemModel, {
     foreignKey: "pembelian_barang_supplier_uuid",
@@ -23,6 +23,24 @@ PembelianBarangSupplierModel.belongsTo(MasterSupplierModel, {
 PembelianBarangSupplierItemModel.belongsTo(ConversionModel, {
     foreignKey: "konversi_uuid",
     as: "cnvrsn",
+    constraints: false,
+});
+
+PembelianBarangSupplierModel.belongsTo(LokasiStokModel, {
+    foreignKey: "lokasi_stok_uuid",
+    as: "lks",
+    constraints: false,
+});
+
+PembelianBarangSupplierModel.belongsTo(JenisStokModel, {
+    foreignKey: "jenis_stok_uuid",
+    as: "jenis_stok",
+    constraints: false,
+})
+
+PembelianBarangSupplierItemModel.belongsTo(ItemMedisModel, {
+    foreignKey: "item_uuid",
+    as: "item_medis",
     constraints: false,
 });
 
@@ -99,6 +117,54 @@ export default class InventoryBarangRepository {
             },
             include: [
                 {
+                    model: MasterSupplierModel,
+                    as: "spplr",
+                    required: false,
+                    attributes: ["name"]
+                }
+            ],
+        };
+
+        return Pagination.init(PembelianBarangSupplierModel, req, option);
+    }
+
+    static async getDetail(req) {
+        return await PembelianBarangSupplierModel.findOne({
+            where: {
+                uuid: req.uuid,
+                deleted_at: {
+                    [Op.is]: null,
+                },
+            },
+            attributes: {
+                exclude: [
+                    "deleted_at",
+                    "created_at",
+                    "updated_at",
+                    "faskes_uuid",
+                    "no_surat_jalan",
+                ],
+            },
+            include: [
+                {
+                    model: MasterSupplierModel,
+                    as: "spplr",
+                    required: false,
+                    attributes: ["name"]
+                },
+                {
+                    model: LokasiStokModel,
+                    as: "lks",
+                    required: false,
+                    attributes: ["name"]
+                },
+                {
+                    model: JenisStokModel,
+                    as: "jenis_stok",
+                    required: false,
+                    attributes: ["name"]
+                },
+                {
                     model: PembelianBarangSupplierItemModel,
                     as: "pbsu",
                     required: false,
@@ -119,26 +185,16 @@ export default class InventoryBarangRepository {
                                 ],
                             },
                         },
+                        {
+                            model: ItemMedisModel,
+                            as: "item_medis",
+                            required: false,
+                            attributes: ["name"]
+                        }
                     ],
                 },
-                {
-                    model: MasterSupplierModel,
-                    as: "spplr",
-                    required: false,
-                    attributes: {
-                        exclude: ["deleted_at", "created_at", "updated_at", "faskes_uuid"],
-                    },
-                },
-                {
-                    model: MasterSupplierModel,
-                    as: "spplr",
-                    required: false,
-                    attributes: ["name"]
-                }
             ],
-        };
-
-        return Pagination.init(PembelianBarangSupplierModel, req, option);
+        });
     }
 
     static async bulkCreate(req, transaction) {
@@ -225,23 +281,45 @@ export default class InventoryBarangRepository {
         );
     }
 
-    // edit alkes item
-    static async editAlkesItem(req, transaction) {
-        if (!transaction) {
-            transaction = await sequelizeInstance.transaction();
-        }
-
-        const affectedRow = await OrderAlkesItemModel.update(req, {
+    static async getForRetur(req) {
+        const option = {
             where: {
-                uuid: req.uuid,
+                faskes_uuid: req.faskes_uuid,
+                is_return: null,
             },
-            transaction: transaction,
-        });
+            include: {
+                model: MasterSupplierModel,
+                as: 'spplr',
+                required: false,
+                attributes: ['name']
+            }
+        };
 
-        if (affectedRow[0] === 0) {
-            throw new InternalServerException("Tidak ada data yang diubah");
+        if (req.search) {
+            option.where.no_faktur = {[Op.iLike]: `%${req.search || ""}%`};
         }
 
-        return affectedRow;
+        if (req.start_date && req.end_date) {
+            option.where.tanggal_faktur = {
+                [Op.gte]: toEpochDate(req.start_date),
+                [Op.lte]: toEpochDate(req.end_date),
+            }
+        }
+
+        return await Pagination.init(PembelianBarangSupplierModel, req, option);
+    }
+
+    static async changeReturnStatus(req, transaction) {
+        return await PembelianBarangSupplierModel.update(
+            {
+                is_return: true,
+            },
+            {
+                where: {
+                    uuid: req.uuid,
+                },
+                transaction
+            }
+        );
     }
 }

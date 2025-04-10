@@ -5,18 +5,21 @@ import RiwayatMutasiSeeder from "./riwayat-mutasi-seeder.js";
 import StokOpnameSeeder from "./stok-opname-seeder.js";
 import PenerimaanReturSeeder from "./penerimaan-retur-seeder.js";
 import DatamasterSupplierSeeder from "./datamaster-supplier-seeder.js";
+import ReturSupplierSeeder from "./retur-supplier-seeder.js";
+import PengadaanBarangSeeder from "./pengadaan-barang-seeder.js";
 
 export const dbSeeder = async () => {
     const transaction = await sequelizeInstance.transaction();
     try {
-
         await PenerimaanUnitSeeder.seed(transaction);
         await PengeluaranUnitSeeder.seed(transaction);
         await RiwayatMutasiSeeder.seed(transaction);
         await StokOpnameSeeder.seed(transaction);
         await PenerimaanReturSeeder.seed(transaction);
         await DatamasterSupplierSeeder.seed(transaction);
-
+        await ReturSupplierSeeder.seed(transaction);
+        await PengadaanBarangSeeder.seed(transaction);
+        
         await transaction.commit();
     } catch (error) {
         await transaction.rollback();

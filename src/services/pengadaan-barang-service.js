@@ -7,6 +7,8 @@ import Utils from "../helpers/utils.js";
 import {uuidv7} from "uuidv7";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 
+import NotfoundException from "../errors/notfound-exception.js";
+
 export default class PengadaanBarangService {
     static async orderBarang(req) {
         const transaction = await sequelizeInstance.transaction();
@@ -29,23 +31,17 @@ export default class PengadaanBarangService {
                 metode_pembelian: req.metode_pembelian,
                 catatan_po: req.catatan_po,
                 isCito: req.is_cito,
-                total_item: req.total_item,
+                total_item: req.items.length,
                 diskon: req.diskon ? req.diskon : 0,
                 materai: req.materai ? req.materai : 0,
                 ppn: req.ppn,
-                grand_total: req.grand_total,
+                grand_total: req.items.reduce((acc, item) => acc + (item.qty_order * item.harga_satuan), 0),
                 petugas_pembuat_po: req.petugas_pembuat_po,
                 petugas_pembuat_po_uuid: req.petugas_pembuat_po_uuid,
                 status: "pending",
-                alasan_batal: req.alasan_batal,
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
                 tanggal_penerimaan: req.tanggal_penerimaan,
-                no_faktur: req.no_faktur,
-                tanggal_faktur: req.tanggal_faktur,
                 catatan_penerimaan: req.catatan_penerimaan,
-                petugas_pengirim: req.petugas_pengirim,
-                petugas_penerima: req.petugas_penerima,
-                petugas_penerima_uuid: req.petugas_penerima_uuid,
                 ongkos_kirim: req.ongkos_kirim,
             };
 
@@ -63,10 +59,9 @@ export default class PengadaanBarangService {
             for (const item of req.items) {
                 item.pembelian_barang_supplier_uuid = order_pengadaan_barang_uuid;
                 item.faskes_uuid = req.faskes_uuid;
+                item.total_harga = item.qty_order * item.harga_satuan;
 
                 // ZodValidator.validate(AlkesValidation.CREATE_ALKES_ITEM, item);
-
-                delete item.name;
                 const data_pembelian_item =
                     await InventoryBarangRepository.createPembelianBarangItem(
                         item,
@@ -90,6 +85,44 @@ export default class PengadaanBarangService {
     static async getAll(req) {
         ZodValidator.validate(InventoryValidation.GET_FILTER, req);
         return await InventoryBarangRepository.getAll(req);
+    }
+
+    static async getDetail(req) {
+        const result = await InventoryBarangRepository.getDetail(req);
+
+        if (!result) {
+            throw new NotfoundException("Data tidak ditemukan");
+        }
+
+        return {
+            uuid: req.uuid,
+            jenis_stok_uuid: result.jenis_stok_uuid ?? "",
+            supplier_uuid: result.supplier_uuid ?? "",
+            lokasi_stok_uuid: result.lokasi_stok_uuid ?? "",
+            no_pembelian: result.no_po ?? "",
+            tanggal_pembelian: result.tanggal_pembelian ?? 0,
+            supplier: result.spplr?.name ?? "",
+            lokasi: result.lks?.name ?? "",
+            jenis_item: result.jenis_item ?? "",
+            payment_method: result.metode_pembelian ?? "",
+            kategori_item: result.kategori_item ?? "",
+            cito: result.isCito ? "cito" : "-",
+            jenis_stok: result.jenis_stok?.name ?? "",
+            catatan: result.catatan_po ?? "",
+            items: result.pbsu?.map((item) => ({
+                total_harga: item.total_harga ?? 0,
+                harga_satuan: item.harga_satuan ?? 0,
+                qty_order: item.qty_order ?? 0,
+                satuan_beli: `${item.cnvrsn?.satuan_pembelian ?? "-"}/${item.cnvrsn?.konversi ?? ""} ${item.cnvrsn?.satuan_penggunaan ?? "-"}`,
+                nama: item.item_medis?.name ?? "",
+            })) ?? [],
+            total_item: result.total_item ?? 0,
+            diskon: result.diskon ?? 0,
+            materai: result.materai ?? 0,
+            ppn: result.ppn ?? 0,
+            grand_total: result.grand_total ?? 0,
+            petugas_pembuat_po: result.petugas_pembuat_po ?? "",
+        }
     }
 
     static cancelPembelianBarang(req) {

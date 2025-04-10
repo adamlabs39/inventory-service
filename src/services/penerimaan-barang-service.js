@@ -3,7 +3,6 @@ import InventoryValidation from "../validations/inventory-validation.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
 import InternalServerException from "../errors/internal-server-exception.js";
 
-import Utils from "../helpers/utils.js";
 import {uuidv7} from "uuidv7";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
@@ -78,6 +77,8 @@ export default class PenerimaanBarangService {
             });
 
             await InventoryBarangRepository.bulkCreateStokMedis(arrayItem, tr);
+
+            // TODO : LOG TO TABLE HISTORI MUTASI
 
             await tr.commit();
 

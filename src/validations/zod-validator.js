@@ -5,11 +5,14 @@ export default class ZodValidator {
         try {
             return schema.parse(objectValidate);
         } catch (error) {
-            const errorMessage = error.errors.map((err) => {
-                return `${err.path} ${err.message}`;
+            const errors = error.errors.map((item) => {
+                return {
+                    message: `${item.path.join(".")} ${item.message}`,
+                    field: item.path.join("."),
+                };
             });
 
-            throw new BadRequestException(errorMessage);
+            throw new BadRequestException("Validasi gagal", errors);
         }
     }
 }

@@ -6,10 +6,7 @@ export default class PengeluaranUnitController {
         try {
             req.body.faskes_uuid = req.author.faskesUuid;
             req.body.petugas_pengeluaran = req.author.username;
-
-            // TODO :UNCOMMENT THIS AUTHOR UUID
-            // req.body.petugas_pengeluaran_uuid = req.author.uuid;
-            req.body.petugas_pengeluaran_uuid = "0192b31f-365d-731c-8b16-3a4565c9475e";
+            req.body.petugas_pengeluaran_uuid = req.author.user_uuid;
 
             await PengeluaranUnitService.create(req.body);
 
