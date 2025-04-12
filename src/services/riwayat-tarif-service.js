@@ -6,20 +6,20 @@ export default class RiwayatTarifService {
     static async getAll(req) {
         const result = await StockMedisRepository.getRiwayatTarif(req);
 
+        if (result.data === null || result.data.length === 0) {
+            throw new NotfoundException("Data tidak ditemukan");
+        }
+
         result.data = result.data.map((item) => {
             return {
-                uuid: item.uuid,
-                name: item.item_medis_jenis_stok?.item_medis?.name,
-                jenis_item: item.item_medis_jenis_stok?.item_medis?.jenis_item,
-                jenis_stok: item.item_medis_jenis_stok?.detail_stok?.name,
+                uuid: item.stocks[0]?.uuid ?? "",
+                name: item.item_medis?.name,
+                jenis_item: item.item_medis?.jenis_item,
+                jenis_stok: item.detail_stok?.name,
                 kategori_item: "medis",
-                exp_date: `${String(item.exp_date.getDate()).padStart(2, '0')}-${String(item.exp_date.getMonth() + 1).padStart(2, '0')}-${item.exp_date.getFullYear()}`,
-                stok: item.stok,
-                // TODO : BELOM DIPISAHIN HJA, HPP, HARGA DASAR
-                harga_dasar: item.harga_satuan,
-                hpp: item.harga_satuan,
-                hja: item.harga_satuan,
-                satuan_jual: item.konversi?.satuan_penggunaan,
+                stok: item.stocks?.reduce((acc, item) => acc + item.sisa_stok, 0) ?? 0,
+                satuan_pembelian: item.stocks[0]?.konversi?.satuan_pembelian,
+                satuan_penggunaan: item.stocks[0]?.konversi?.satuan_penggunaan,
             }
         })
 
