@@ -106,7 +106,7 @@ export default class PengadaanBarangService {
             jenis_item: result.jenis_item ?? "",
             payment_method: result.metode_pembelian ?? "",
             kategori_item: result.kategori_item ?? "",
-            cito: result.isCito ? "cito" : "-",
+            cito: !!result.isCito,
             jenis_stok: result.jenis_stok?.name ?? "",
             catatan: result.catatan_po ?? "",
             items: result.pbsu?.map((item) => ({
