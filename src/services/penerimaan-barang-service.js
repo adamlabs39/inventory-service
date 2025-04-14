@@ -79,6 +79,7 @@ export default class PenerimaanBarangService {
             await InventoryBarangRepository.bulkCreateStokMedis(arrayItem, tr);
 
             // TODO : LOG TO TABLE HISTORI MUTASI
+            // TODO : CREATE DATA IN HARGA ITEM TABLE
 
             await tr.commit();
 

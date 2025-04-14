@@ -396,54 +396,70 @@ export default class StockMedisRepository {
     static async getRiwayatTarif(req) {
         const option = {
             where: {
-                faskes_uuid: req.faskes_uuid
+                jenis_stok_uuid: {
+                    [Op.iLike]: `%${req.jenis_stok_uuid ?? ""}%`
+                },
+                faskes_uuid: req.faskes_uuid,
             },
-            attributes: ["uuid", "stok", "exp_date", "harga_satuan"],
+            attributes: {
+                exclude: [
+                    "deleted_at",
+                    "created_at",
+                    "updated_at",
+                ],
+            },
             include: [
                 {
-                    model: ItemMedisJenisStokModel,
-                    as: 'item_medis_jenis_stok',
+                    model: ItemMedisModel,
+                    as: 'item_medis',
                     required: true,
-                    attributes: ['uuid', 'item_medis_uuid', 'jenis_stok_uuid'],
+                    attributes: ['name', 'jenis_item'],
                     where: {
-                        jenis_stok_uuid: {
-                            [Op.iLike]: `%${req.jenis_stok_uuid ?? ""}%`
+                        [Op.or]: [
+                            {name: {[Op.iLike]: `%${req.search ?? ""}%`}},
+                            {code: {[Op.iLike]: `%${req.search ?? ""}%`}},
+                        ],
+                        jenis_item: {
+                            [Op.in]: req.jenis_item ? [req.jenis_item] : ['obat', 'alkes'],
+                        }
+                    }
+                },
+                {
+                    model: JenisStokModel,
+                    as: 'detail_stok',
+                    required: false,
+                    attributes: ['name'],
+                },
+                {
+                    model: StockMedisModel,
+                    as: 'stocks',
+                    required: true,
+                    attributes: ['sisa_stok', 'uuid'],
+                    where: {
+                        sisa_stok: {
+                            [Op.gt]: 0
                         },
                     },
                     include: [
                         {
-                            model: ItemMedisModel,
-                            as: 'item_medis',
-                            required: true,
-                            attributes: ['name', 'jenis_item'],
-                            where: {
-                                [Op.or]: [
-                                    {name: {[Op.iLike]: `%${req.search ?? ""}%`}},
-                                    {code: {[Op.iLike]: `%${req.search ?? ""}%`}},
-                                ],
-                                jenis_item: {
-                                    [Op.in]: req.jenis_item ? [req.jenis_item] : ['obat', 'alkes'],
-                                }
-                            }
-                        },
-                        {
-                            model: JenisStokModel,
-                            as: 'detail_stok',
+                            model: ConversionModel,
+                            as: 'konversi',
                             required: false,
-                            attributes: ['name'],
+                            attributes: {
+                                exclude: [
+                                    "deleted_at",
+                                    "created_at",
+                                    "updated_at",
+                                    "faskes_uuid",
+                                ],
+                            }
                         }
                     ]
-                },
-                {
-                    model: ConversionModel,
-                    as: 'konversi',
-                    required: false,
-                    attributes: ['satuan_penggunaan'],
                 }
             ]
         }
 
-        return await Pagination.init(StockMedisModel, req, option);
+        return await Pagination.init(ItemMedisJenisStokModel, req, option);
     }
 
     static async getPurchaseHistory(req) {
