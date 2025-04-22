@@ -7,7 +7,7 @@ export default class DatamasterSupplierController {
             req.body.faskes_uuid = req.author.faskesUuid;
 
             await DatamasterSupplierService.create(req.body);
-            res.status(201).json(successResponse("data berhasil dibuat"));
+            res.status(201).json(successResponse("Data berhasil disimpan"));
         } catch (error) {
             nextFunction(error);
         }

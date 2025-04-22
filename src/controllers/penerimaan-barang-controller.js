@@ -9,7 +9,7 @@ export default class PenerimaanBarangController {
             req.body.uuid = uuid;
 
             const result = await PenerimaanBarangService.orderPenerimaan(req.body);
-            res.status(201).json(successResponse("data berhasil dibuat", result));
+            res.status(201).json(successResponse("Data berhasil disimpan", result));
         } catch (error) {
             nextFunction(error);
         }
