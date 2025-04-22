@@ -11,7 +11,7 @@ export default class AlkesController {
 
             const result = await AlkesService.orderAlkes(req.body);
 
-            res.status(200).json(successResponse("data berhasil dibuat", result));
+            res.status(201).json(successResponse("Data berhasil disimpan", result));
         } catch (error) {
             nextFunction(error);
         }
