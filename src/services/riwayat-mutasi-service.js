@@ -12,7 +12,9 @@ export default class RiwayatMutasiService {
 
         const data = await RiwayatMutasiRepository.getAll(req);
 
-        const result = {};
+        let result = {};
+        result.pagination = data.pagination
+
         result.data = data.data.map((item) => {
             return {
                 transaksi: {
@@ -36,7 +38,7 @@ export default class RiwayatMutasiService {
             }
         });
 
-        result.pagination = data.pagination;
+        // result.pagination = data.pagination;
 
         return result;
     }

@@ -7,6 +7,7 @@ import StockMedisRepository from "../repositories/stock-medis-repository.js";
 import RiwayatMutasiService from "./riwayat-mutasi-service.js";
 import Utils from "../helpers/utils.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
+import NotfoundException from "../errors/notfound-exception.js";
 
 export default class StokAdjustmentService {
     static async getAll(req) {
@@ -18,7 +19,7 @@ export default class StokAdjustmentService {
         const data = await ItemMedisJenisStokRepository.getDetailForStokAdjustment(req);
 
         if (!data) {
-            throw new BadRequestException("Data not found");
+            throw new NotfoundException("UUID tidak ditemukan");
         } else {
             return data.dataValues.stocks.map((item) => {
                 return {
