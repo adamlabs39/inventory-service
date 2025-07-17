@@ -5,20 +5,20 @@ services:
       dockerfile: Dockerfile
       no_cache: true
     image: adameds/inventory:dev
-    container_name: adameds-inventory
+    container_name: api-adameds-inventory
     ports:
       - 8088:8088
     restart: always
     networks:
       - inventory-network
     environment:
-      DOTENV_KEY: ${DOTENV_KEY}
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN}
       API_BASE: ${API_BASE}
       API_VERSION: ${API_VERSION}
-    volumes:
-      - type: bind
-        source: /home/engineer/adameds/.env.vault
-        target: /adameds-inventory/.env.vault
+    # volumes:
+    #   - type: bind
+    #     source: /home/engineer/adameds/.env.vault
+    #     target: /adameds-inventory/.env.vault
 networks:
   inventory-network:
     driver: bridge
