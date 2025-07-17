@@ -6,7 +6,8 @@ build-deploy:
   tags:
     - development
   before_script:
-    - echo $(whoami)
+    - echo "=== USER INFO ==="
+    - whoami
     - echo "@adameds:registry=https://gitlab.com/api/v4/groups/93029767/-/packages/npm/" >> .npmrc
     - echo "//gitlab.com/api/v4/groups/93029767/-/packages/npm/:_authToken=$AUTH_TOKEN" >> .npmrc
     - docker compose --env-file /home/env/.env.inventory down --rmi all
