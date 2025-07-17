@@ -1,4 +1,5 @@
 import RiwayatMutasiService from "../services/riwayat-mutasi-service.js";
+import successResponse from "../responses/success-response.js";
 
 export default class RiwayatMutasiController {
   static async getAll(req, res, nextFunction) {
@@ -6,7 +7,12 @@ export default class RiwayatMutasiController {
       req.query.faskes_uuid = req.author.faskesUuid;
       const result = await RiwayatMutasiService.getAll(req.query);
       // res.status(200).json(result)
-      res.status(200).json(successResponse("Data berhasil ditampilkan", result));
+      // res.status(200).json(successResponse("Data berhasil ditampilkan", result));
+       res
+        .status(200)
+        .json(
+          successResponse("Data berhasil ditampilkan", result.data, result.pagination)
+        );
     } catch (error) {
       nextFunction(error);
     }

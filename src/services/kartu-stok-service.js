@@ -19,6 +19,7 @@ export default class KartuStokService {
                 jenis_stok: item.detail_stok?.name,
                 jenis_item: item.item_medis?.jenis_item,
                 kategori_obat: item.item_medis?.kategori_obat?.name,
+                satuan_obat: item.item_medis?.satuan_kemasan?.name,
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
                 lokasi_stok: item.stocks[0]?.lokasi_stok?.name,
                 sisa_stok: item.stocks?.reduce((acc, item) => acc + item.sisa_stok, 0),
