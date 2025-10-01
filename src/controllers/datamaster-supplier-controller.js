@@ -4,10 +4,20 @@ import DatamasterSupplierService from "../services/datamaster-supplier-service.j
 export default class DatamasterSupplierController {
     static async create(req, res, nextFunction) {
         try {
-            req.body.faskes_uuid = req.author.faskesUuid;
+            const payload = { ...req.body, faskes_uuid: req.author.faskesUuid };
+            const result = await DatamasterSupplierService.create(payload);
+            res.status(201).json(successResponse("Data berhasil disimpan", result));
+        } catch (error) {
+            nextFunction(error);
+        }
+    }
 
-            await DatamasterSupplierService.create(req.body);
-            res.status(201).json(successResponse("Data berhasil disimpan"));
+    static async getByUuid(req, res, nextFunction) {
+        try {
+            const { uuid } = req.params;
+            const faskes_uuid = req.author.faskesUuid;
+            const result = await DatamasterSupplierService.getByUuid({ uuid, faskes_uuid});
+            res.status(200).json(successResponse("Data berhasil didapat", result));
         } catch (error) {
             nextFunction(error);
         }
@@ -15,20 +25,16 @@ export default class DatamasterSupplierController {
 
     static async getAll(req, res, nextFunction) {
         try {
-            req.body.faskes_uuid = req.author.faskesUuid;
-            req.body.name = req.query.name;
-            req.body.page = req.query.page;
-            req.body.limit = req.query.limit;
-            const result = await DatamasterSupplierService.getAll(req.body);
-            res
-                .status(200)
-                .json(
-                    successResponse(
-                        "data berhasil didapat",
-                        result.data,
-                        result.pagination
-                    )
-                );
+            const { name, page, limit } = req.query;
+            const faskes_uuid = req.author.faskesUuid;
+            const options = { name, page, limit, faskes_uuid };
+            const result = await DatamasterSupplierService.getAll(options);
+            res.status(200).json(successResponse(
+                "data berhasil didapat",
+                result.data,
+                result.pagination
+                )
+            );
         } catch (error) {
             nextFunction(error);
         }
@@ -36,11 +42,11 @@ export default class DatamasterSupplierController {
 
     static async getAllWithoutPagination(req, res, nextFunction) {
         try {
-            req.query.faskes_uuid = req.author.faskesUuid;
-            const result = await DatamasterSupplierService.getAllWithoutPagination(
-                req.body
-            );
-            res.status(200).json(successResponse("data berhasil didapat", result));
+            const { name } = req.query;
+            const faskes_uuid = req.author.faskesUuid;
+            const options = { name, faskes_uuid };
+            const result = await DatamasterSupplierService.getAllWithoutPagination(options);
+            res.status(200).json(successResponse("Data berhasil didapat", result));
         } catch (error) {
             nextFunction(error);
         }
@@ -48,11 +54,12 @@ export default class DatamasterSupplierController {
 
     static async update(req, res, nextFunction) {
         try {
-            const {uuid} = req.params;
-            req.body.uuid = uuid;
-            req.body.faskes_uuid = req.author.faskesUuid;
-            await DatamasterSupplierService.update(req.body);
-            res.status(200).json(successResponse("data berhasil diupdate"));
+            const { uuid } = req.params;
+            const body = req.body;
+            const faskes_uuid = req.author.faskesUuid;
+            const payload = { ...body, uuid: uuid, faskes_uuid: faskes_uuid }
+            const result = await DatamasterSupplierService.update(payload);
+            res.status(200).json(successResponse("Data berhasil diupdate", result));
         } catch (error) {
             nextFunction(error);
         }
@@ -61,9 +68,12 @@ export default class DatamasterSupplierController {
     static async delete(req, res, nextFunction) {
         try {
             const {uuid} = req.params;
-            req.body.uuid = uuid;
-            await DatamasterSupplierService.delete(req.body);
-            res.status(200).json(successResponse("data berhasil dihapus"));
+            const faskes_uuid = req.author.faskesUuid;
+            await DatamasterSupplierService.delete({
+                uuid: uuid,
+                faskes_uuid: faskes_uuid,
+            });
+            res.status(200).json(successResponse("Data berhasil dihapus"));
         } catch (error) {
             nextFunction(error);
         }

@@ -4,10 +4,13 @@ import PengadaanBarangService from "../services/pengadaan-barang-service.js";
 export default class PengadaanBarangController {
   static async create(req, res, nextFunction) {
     try {
-      req.body.faskes_uuid = req.author.faskesUuid;
-      req.body.petugas_pembuat_po = req.author.username;
-      req.body.petugas_pembuat_po_uuid = req.author.user_uuid;
-      const result = await PengadaanBarangService.orderBarang(req.body);
+      const payload = {
+        ...req.body,
+        faskes_uuid: req.author.faskesUuid,
+        petugas_pembuat_po: req.author.username,
+        petugas_pembuat_po_uuid: req.author.user_uuid
+      }
+      const result = await PengadaanBarangService.create(payload);
       res.status(201).json(successResponse("Data berhasil disimpan", result));
     } catch (error) {
       nextFunction(error);
@@ -16,15 +19,12 @@ export default class PengadaanBarangController {
 
   static async getAll(req, res, nextFunction) {
     try {
-      req.body.faskes_uuid = req.author.faskesUuid;
-      req.body.no_po = req.query.no_po;
-      req.body.filter = req.query.filter;
-      req.body.page = req.query.page;
-      req.body.limit = req.query.limit;
-      const result = await PengadaanBarangService.getAll(req.body);
-      res
-        .status(200)
-        .json(
+      const options = {
+        ...req.query,
+        faskes_uuid: req.author.faskesUuid,
+      }
+      const result = await PengadaanBarangService.getAll(options);
+      res.status(200).json(
           successResponse(
             "Data berhasil ditampilkan",
             result.data,
@@ -38,21 +38,12 @@ export default class PengadaanBarangController {
 
   static async getDetail(req, res, nextFunction) {
     try {
-      const { uuid } = req.params;
-      req.body.uuid = uuid;
-      const result = await PengadaanBarangService.getDetail(req.body);
+      const payload = {
+        uuid: req.params.uuid,
+        faskes_uuid: req.author.faskesUuid,
+      }
+      const result = await PengadaanBarangService.getDetail(payload);
       res.status(200).json(successResponse("data berhasil didapat", result));
-    } catch (error) {
-      nextFunction(error);
-    }
-  }
-
-  static async cancelPembelianBarang(req, res, nextFunction) {
-    try {
-      const { uuid } = req.params;
-      req.body.uuid = uuid;
-      await PengadaanBarangService.cancelPembelianBarang(req.body);
-      res.status(200).json(successResponse("data berhasil dibatalkan"));
     } catch (error) {
       nextFunction(error);
     }
@@ -60,22 +51,27 @@ export default class PengadaanBarangController {
 
   static async update(req, res, nextFunction) {
     try {
-      req.body.faskes_uuid = req.author.faskesUuid;
-      const { uuid } = req.params;
-      req.body.uuid = uuid;
-      await PengadaanBarangService.update(req.body);
-      res.status(200).json(successResponse("Data berhasil diedit"));
+      const payload = {
+        ...req.body,
+        uuid: req.params.uuid,
+        faskes_uuid: req.author.faskesUuid
+      };
+      const updatedPurchaseOrder = await PengadaanBarangService.update(payload);
+      res.status(200).json(successResponse("Data pengadaan berhasil diupdate", updatedPurchaseOrder));
     } catch (error) {
-      nextFunction(error);
+        nextFunction(error);
     }
   }
 
-  static async delete(req, res, nextFunction) {
+  static async cancelPembelianBarang(req, res, nextFunction) {
     try {
-      const { uuid } = req.params;
-      req.body.uuid = uuid;
-      await DatamasterBentukRacikanService.delete(req.body);
-      res.status(200).json(successResponse("data berhasil dihapus"));
+      const payload = {
+        ...req.body,
+        uuid: req.params.uuid,
+        faskes_uuid: req.author.faskesUuid,
+      }
+      await PengadaanBarangService.cancelPembelianBarang(payload);
+      res.status(200).json(successResponse("data berhasil dibatalkan"));
     } catch (error) {
       nextFunction(error);
     }

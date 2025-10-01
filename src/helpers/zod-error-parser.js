@@ -1,10 +1,8 @@
-const zodErrorParser = (zodError) => {
-  return zodError.map(error => {
-    return {
-        field: error.path[error.path.length -1],
-        message: error.message
-    }
-  });
+const zodErrorParser = (errors) => {
+    return errors.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+    }));
 };
 
 export default zodErrorParser;

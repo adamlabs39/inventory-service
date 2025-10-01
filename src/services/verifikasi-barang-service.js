@@ -1,10 +1,22 @@
-import ZodValidator from "../validations/zod-validator.js";
-import InventoryValidation from "../validations/inventory-validation.js";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
+import PengadaanValidation from "../validations/pengadaan-validation.js";
+import NotfoundException from "../errors/notfound-exception.js";
 
 export default class VerifikasiBarangService {
-  static verifikasiPembelianBarang(req) {
-    ZodValidator.validate(InventoryValidation.DATA_SATUAN, req);
-    return InventoryBarangRepository.updateVerifikasi(req);
+  static async verifikasiPembelianBarang(payload) {
+    const validatedPayload = await PengadaanValidation.VERIFY_PEMBELIAN_BARANG.parseAsync(payload);
+    const purchaseOrder = await InventoryBarangRepository.getDetail(validatedPayload);
+    
+    if (!purchaseOrder) {
+      throw new NotfoundException("Data Pengadaan Barang yang akan diverifikasi tidak ditemukan");
+    }
+
+    if (purchaseOrder.status !== 'pending') {
+      throw new BadRequestException(`Tidak dapat memverifikasi PO dengan status "${purchaseOrder.status}"`);
+    }
+
+    await InventoryBarangRepository.updateVerifikasi(validatedPayload);
+
+    return await InventoryBarangRepository.getDetail(validatedPayload);
   }
 }

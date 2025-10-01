@@ -100,6 +100,7 @@ export default class InventoryBarangRepository {
     static async getAll(req) {
         const option = {
             where: {
+                faskes_uuid: req.faskes_uuid,
                 no_po: {[Op.iLike]: `%${req.no_po || ""}%`},
                 status: req.filter,
                 deleted_at: {
@@ -128,10 +129,11 @@ export default class InventoryBarangRepository {
         return Pagination.init(PembelianBarangSupplierModel, req, option);
     }
 
-    static async getDetail(req) {
+    static async getDetail(payload) {
         return await PembelianBarangSupplierModel.findOne({
             where: {
-                uuid: req.uuid,
+                faskes_uuid: payload.faskes_uuid,
+                uuid: payload.uuid,
                 deleted_at: {
                     [Op.is]: null,
                 },
@@ -203,79 +205,99 @@ export default class InventoryBarangRepository {
         });
     }
 
-    static async update(req) {
+    static async update(payload) {
         return await PembelianBarangSupplierModel.update(
             {
                 status: "cancel",
-                alasan_batal: req.alasan_batal,
+                alasan_batal: payload.alasan_batal,
             },
             {
                 where: {
-                    uuid: req.uuid,
+                    faskes_uuid: payload.faskes_uuid,
+                    uuid: payload.uuid,
                 },
             }
         );
     }
 
-    static async updateVerifikasi(req) {
+    static async updateVerifikasi(payload) {
         return await PembelianBarangSupplierModel.update(
             {
                 status: "verifikasi",
             },
             {
                 where: {
-                    uuid: req.uuid,
+                    uuid: payload.uuid,
+                    faskes_uuid: payload.faskes_uuid,
                 },
             }
         );
     }
 
-    static async updateDiterima(req) {
+    static async updateStatusToDiterima(payload, transaction) {
         return await PembelianBarangSupplierModel.update(
             {
                 status: "diterima",
-                alasan_batal: req.alasan_batal,
+                no_faktur: payload.no_faktur,
+                tanggal_faktur: payload.tanggal_faktur,
+                tanggal_terima: payload.tanggal_terima,
             },
             {
                 where: {
-                    uuid: req.uuid,
+                    uuid: payload.uuid,
+                    faskes_uuid: payload.faskes_uuid,
                 },
+                transaction
             }
         );
     }
 
-    static async updatePurchaseOrder(req, transaction) {
-        return await PembelianBarangSupplierModel.update(req, {
+    static async updatePurchaseOrder(payload, transaction) {
+        const { uuid, faskes_uuid, ...dataToUpdate } = payload;
+        return await PembelianBarangSupplierModel.update(dataToUpdate, {
             where: {
-                uuid: req.uuid,
+                uuid: uuid,
+                faskes_uuid: faskes_uuid,
             },
             transaction,
         });
     }
 
-    static async updatePurchaseOrderItems(req, transaction) {
-        return await PembelianBarangSupplierItemModel.update(req, {
+    static async updatePurchaseOrderItems(payload, transaction) {
+        const { uuid, faskes_uuid, ...dataToUpdate } = payload;
+        return await PembelianBarangSupplierItemModel.update(dataToUpdate, {
             where: {
-                uuid: req.uuid,
+                uuid: uuid,
+                faskes_uuid: faskes_uuid, 
             },
             transaction,
         });
     }
 
-    static async bulkCreateStokMedis(req, transaction) {
-        return await StockMedisModel.bulkCreate(req, {
+    static async bulkCreateStokMedis(payload, transaction) {
+        return await StockMedisModel.bulkCreate(payload, {
+            transaction,
+        });
+    }
+    
+    static async deletePurchaseOrder(po_uuid, transaction) {
+        return await PembelianBarangSupplierItemModel.destroy({
+            where: {
+                pembelian_barang_supplier_uuid: po_uuid,
+            },
             transaction,
         });
     }
 
-    static async delete(req) {
+    static async delete(payload) {
         return await PembelianBarangSupplierModel.update(
             {
                 deleted_at: toEpochDate(new Date()),
             },
             {
                 where: {
-                    uuid: req.uuid,
+                    uuid: payload.uuid,
+                    faskes_uuid: payload.faskes_uuid, 
                 },
             }
         );

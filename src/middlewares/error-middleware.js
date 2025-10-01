@@ -1,26 +1,32 @@
+import jwt from 'jsonwebtoken';
+const { TokenExpiredError } = jwt;
+import { ZodError } from "zod";
+import { UniqueConstraintError } from "sequelize";
+import errorResponse from "../responses/error-response.js";
+import zodErrorParser from "../helpers/zod-error-parser.js";
 import NotfoundException from "../errors/notfound-exception.js";
 import BadRequestException from "../errors/bad-request-exception.js";
-import errorResponse from "../responses/error-response.js";
 import InternalServerException from "../errors/internal-server-exception.js";
-import { UniqueConstraintError } from "sequelize";
 
 const errorMiddleware = (error, request, response, nextFunction) => {
-  // if (error instanceof NotfoundException) {
-  //     response.status(error.code).json(errorResponse(error.message, [{
-  //         message: "data tidak ditemukan",
-  //         type: "not found",
-  //     }]));
-  // }
   if (error instanceof NotfoundException) {
     return response
       .status(error.code)
       .json(errorResponse(error.message, error.errors));
+  } else if (error instanceof ZodError) {
+    const errors = zodErrorParser(error.issues); 
+    return response.status(400).json(errorResponse("Validasi gagal", errors));
+  } else if (error.name === 'AuthorizationSdkException') {
+    const authErrorObject = error.message; 
+    return response.status(error.code || 401).json(errorResponse(authErrorObject.message, authErrorObject.errors));
+  } else if (error instanceof TokenExpiredError) {
+    return response.status(401).json(errorResponse("Token expired"));
   } else if (error instanceof BadRequestException) {
-    response
+    return response
       .status(error.status)
       .json(errorResponse(error.message, error.errors));
   } else if (error instanceof InternalServerException) {
-    response.status(error.code).json(errorResponse(error.message));
+    return response.status(error.code).json(errorResponse(error.message));
   } else if (error instanceof UniqueConstraintError) {
     const errors = error.errors.map((item) => {
       return {
@@ -29,10 +35,10 @@ const errorMiddleware = (error, request, response, nextFunction) => {
       };
     });
 
-    response.status(409).json(errorResponse(error.message, errors));
+    return response.status(409).json(errorResponse(error.message, errors));
   }
 
-  response.status(500).json(errorResponse(error.message));
+  return response.status(500).json(errorResponse(error.message));
 };
 
 export default errorMiddleware;

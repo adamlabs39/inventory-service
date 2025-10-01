@@ -1,89 +1,112 @@
-import ZodValidator from "../validations/zod-validator.js";
+import NotfoundException from "../errors/notfound-exception.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
-import DatamasterValidation from "../validations/datamaster-validation.js";
 import DatamasterSupplierRepository from "../repositories/datamaster-supplier-repository.js";
-import BadRequestException from "../errors/bad-request-exception.js";
+import DatamasterSupplierValidation from "../validations/datamaster-supplier-validation.js";
 
 export default class DatamasterSupplierService {
-    static async create(req) {
+    static async create(payload) {
+        const validatedData = await DatamasterSupplierValidation.CREATE_SUPPLIER.parseAsync(payload);
         const transaction = await sequelizeInstance.transaction();
-
-        const validatedData = await DatamasterValidation.CREATE_SUPPLIER.parseAsync(
-            req
-        );
-
-        const dataSupplier = await DatamasterSupplierRepository.create(
-            validatedData,
-            transaction
-        );
-
-        const dataSupplierUuid = dataSupplier.dataValues.uuid;
-        dataSupplier.dataValues.supplier_items = [];
-
-        // create supplier item
         try {
-            for (const supplier_item of req.supplier_items) {
-                supplier_item.supllier_uuid = dataSupplierUuid;
-                // item.faskes_uuid = req.faskes_uuid;
-                supplier_item.faskes_uuid = "0192b31f-365d-731c-8b16-3a4565c9475e";
+            const dataSupplier = await DatamasterSupplierRepository.create(validatedData, transaction);
 
-                // ZodValidator.validate(AlkesValidation.CREATE_ALKES_ITEM, item);
-
-                const data_suppplier_item =
-                    await DatamasterSupplierRepository.createSupplierItem(
-                        supplier_item,
-                        transaction
-                    );
-                dataSupplier.dataValues.supplier_items.push(data_suppplier_item);
+            if (validatedData.supllier_items && validatedData.supllier_items.length > 0) {
+                const itemsToCreate = validatedData.supllier_items.map(item => ({
+                    ...item,
+                    supllier_uuid: dataSupplier.uuid,
+                    faskes_uuid: validatedData.faskes_uuid,
+                }));
+                const createdItems = await DatamasterSupplierRepository.bulkCreateSupplierItem(itemsToCreate, transaction);
+                dataSupplier.dataValues.supplier_items = createdItems;
+            } else {
+                dataSupplier.dataValues.supplier_items = [];
             }
+            
+            await transaction.commit();
+            return dataSupplier;
         } catch (error) {
             await transaction.rollback();
-            throw new BadRequestException("iki error");
+            throw error;
         }
-        // return await DatamasterSupplierRepository.create(validatedData);
-        await transaction.commit();
-
-        return dataSupplier;
     }
 
-    static async getAll(req) {
-        ZodValidator.validate(DatamasterValidation.GET_ALL_SATUAN, req);
-        return await DatamasterSupplierRepository.getAll(req);
+    static async getByUuid(payload) {
+        const validatedPayload = await DatamasterSupplierValidation.GET_SUPLLIER_BY_UUID.parseAsync(payload);
+        const result = await DatamasterSupplierRepository.getByUuid(validatedPayload);
+        if (!result) {
+            throw new NotfoundException("Data supplier tidak ditemukan");
+        }
+        return {
+            uuid: result.uuid,
+            code: result.code,
+            name: result.name,
+            alamat: result.alamat,
+            no_tlp: result.no_tlp,
+            status: result.status,
+            provinsi: {
+                code: result.province?.code ?? null,
+                name: result.province?.name ?? null
+            },
+            kabupaten: {
+                code: result.kabupaten?.code ?? null,
+                name: result.kabupaten?.name ?? null
+            },
+            kecamatan: {
+                code: result.kecamatan?.code ?? null,
+                name: result.kecamatan?.name ?? null
+            },
+            kelurahan: {
+                code: result.kelurahan?.code ?? null,
+                name: result.kelurahan?.name ?? null
+            },
+            kategori_items: result.supplier_items?.map(item => item.kategori_item) ?? []
+        };
     }
 
-    static async getAllWithoutPagination(req) {
-        return await DatamasterSupplierRepository.getAllWithoutPagination(req);
+    static async getAll(options) {
+        const validatedOptions = await DatamasterSupplierValidation.GET_ALL_SUPPLIER.parseAsync(options);
+        const finalOptions = {
+            ...validatedOptions,
+            page: validatedOptions.page || 1,
+            limit: validatedOptions.limit || 10,
+        };
+        return await DatamasterSupplierRepository.getAll(finalOptions);
+    }
+
+    static async getAllWithoutPagination(options) {
+        const validatedOptions = await DatamasterSupplierValidation.GET_ALL_SUPPLIER_WITHOUT_PAGINATION.parseAsync(options);
+        return await DatamasterSupplierRepository.getAllWithoutPagination(validatedOptions);
     }
 
     static async update(req) {
-        let validData = ZodValidator.validate(
-            DatamasterValidation.UPDATE_SUPPLIER,
-            req
-        );
-
-        const transaction = await sequelizeInstance.transaction();
-
+        const transaction = await sequelizeInstance.transaction();        
         try {
-            await DatamasterSupplierRepository.update(validData, transaction);
-            await DatamasterSupplierRepository.deleteAllSupplierItem(validData.uuid, transaction);
-            await DatamasterSupplierRepository.bulkCreateSupplierItem(validData.supplier_items.map((item) => {
-                item.supllier_uuid = validData.uuid;
-                item.faskes_uuid = validData.faskes_uuid;
-                return item;
-            }), transaction);
-
+            const validatedData = await DatamasterSupplierValidation.UPDATE_SUPPLIER.parseAsync(req);
+            await DatamasterSupplierRepository.update(validatedData, transaction);
+            if (validatedData.supllier_items) {
+                await DatamasterSupplierRepository.deleteAllSupplierItem(validatedData.uuid, transaction);
+                if (validatedData.supllier_items.length > 0) {
+                    const newItems = validatedData.supllier_items.map((item) => ({
+                        ...item,
+                        supllier_items: validatedData.uuid,
+                        faskes_uuid: validatedData.faskes_uuid
+                    }))
+                    await DatamasterSupplierRepository.bulkCreateSupplierItem(newItems, transaction);
+                }
+            }
             await transaction.commit();
-        } catch (e) {
+            return await DatamasterSupplierRepository.getByUuid({
+                uuid: validatedData.uuid,
+                faskes_uuid: validatedData.faskes_uuid,
+            });
+        } catch (error) {
             await transaction.rollback();
-            throw new BadRequestException("gagal update supplier",);
+            throw error
         }
     }
 
-    static delete(req) {
-        let validData = ZodValidator.validate(
-            DatamasterValidation.DELETE_SATUAN,
-            req
-        );
-        return DatamasterSupplierRepository.delete(validData);
+    static async delete(payload) {
+        const validatedData = await DatamasterSupplierValidation.DELETE_SUPPLIER.parseAsync(payload);
+        return await DatamasterSupplierRepository.delete(validatedData);
     }
 }
