@@ -1,10 +1,8 @@
 import { z } from "zod";
 import {
-  faskesUuidRequired,
   required,
   uuidRequired,
 } from "./message-validation-error.js";
-import DatamasterSupplierRepository from "../repositories/datamaster-supplier-repository.js";
 
 export default class InventoryValidation {
   static GET_FILTER = z.object({

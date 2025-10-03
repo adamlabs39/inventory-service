@@ -1,6 +1,6 @@
 import Pagination from "../helpers/pagination.js";
-import {Op} from "sequelize";
-import {toEpochDate} from "../helpers/date-helper.js";
+import { Op } from "sequelize";
+import { toEpochDate } from "../helpers/date-helper.js";
 import {
     KabupatenModel,
     KecamatanModel,
@@ -46,81 +46,73 @@ MasterSupplierModel.hasMany(MasterSupplierKategoriItemModel, {
     constraints: false,
 });
 
+const supplierDetailIncludes = [
+    { model: ProvinceModel, as: "province", required: false, attributes: ["code", "name"] },
+    { model: KabupatenModel, as: "kabupaten", required: false, attributes: ["code", "name"] },
+    { model: KecamatanModel, as: "kecamatan", required: false, attributes: ["code", "name"] },
+    { model: KelurahanModel, as: "kelurahan", required: false, attributes: ["code", "name"] },
+    { model: MasterSupplierKategoriItemModel, as: "supplier_items", required: false, attributes: ["kategori_item"] }
+];
+
 export default class DatamasterSupplierRepository {
-    static async create(req, transaction) {
-        return await MasterSupplierModel.create(req, {transaction});
+    static async create(payload, transaction) {
+        return await MasterSupplierModel.create(payload, {transaction});
     }
 
-    // create prescription item
-    static async createSupplierItem(req, transaction) {
-        return await MasterSupplierKategoriItemModel.create(req, {transaction});
+    static async createSupplierItem(payload, transaction) {
+        return await MasterSupplierKategoriItemModel.create(payload, {transaction});
     }
 
-    static async bulkCreateSupplierItem(req, transaction) {
-        return await MasterSupplierKategoriItemModel.bulkCreate(req, {transaction});
+    static async bulkCreateSupplierItem(payload, transaction) {
+        return await MasterSupplierKategoriItemModel.bulkCreate(payload, {transaction});
     }
 
-    static async deleteAllSupplierItem(supllier_uuid, transaction) {
+    static async deleteAllSupplierItem(payload, transaction) {
         return await MasterSupplierKategoriItemModel.destroy({
             where: {
-                supllier_uuid: supllier_uuid,
+                supllier_uuid: payload,
             },
             transaction,
         });
     }
 
-    static async getAll(req) {
-        const option = {
-            where: {
-                faskes_uuid: req.faskes_uuid,
-                name: {[Op.iLike]: `%${req.name || ""}%`},
-                deleted_at: {
-                    [Op.is]: null,
-                },
-            },
-            include: [
-                {
-                    model: ProvinceModel,
-                    as: "province",
-                    required: false,
-                    attributes: ["code", "name"],
-                },
-                {
-                    model: KabupatenModel,
-                    as: "kabupaten",
-                    required: false,
-                    attributes: ["code", "name"],
-                },
-                {
-                    model: KecamatanModel,
-                    as: "kecamatan",
-                    required: false,
-                    attributes: ["code", "name"],
-                },
-                {
-                    model: KelurahanModel,
-                    as: "kelurahan",
-                    required: false,
-                    attributes: ["code", "name"],
-                },
-                {
-                    model: MasterSupplierKategoriItemModel,
-                    as: "supplier_items",
-                    required: false,
-                    attributes: ["kategori_item"],
-                }
-            ],
+    static async getAll(options) {
+        const whereClause = {
+            faskes_uuid: options.faskes_uuid,
+            deleted_at: { [Op.is]: null },
+        }
+
+        if (options.name) {
+            whereClause.name = { [Op.iLike]: `%${options.name}%` };
+        }
+
+        const queryOptions = {
+            where: whereClause,
+            include: supplierDetailIncludes,
         };
 
-        return Pagination.init(MasterSupplierModel, req, option);
+        return Pagination.init(MasterSupplierModel, options, queryOptions);
     }
 
-    static async getAllWithoutPagination(req) {
+    static async getAllWithoutPagination(options) {
+        const whereClause = {
+            faskes_uuid: options.faskes_uuid,
+            status: true,
+        }
+
+        if (options.name) {
+            whereClause.name = { [Op.iLike]: `%${options.name}%` };
+        }
+
         return await MasterSupplierModel.findAll({
-            where: {
-                faskes_uuid: req.faskes_uuid,
-                status: true,
-            },
+            where: whereClause,
+        });
+    }
+
+    static async getByUuid({ uuid, faskes_uuid }) {
+        return await MasterSupplierModel.findOne({
+            where: { uuid, faskes_uuid, deleted_at: null },
+            include: supplierDetailIncludes,
         });
     }
 
@@ -136,24 +128,27 @@ export default class DatamasterSupplierRepository {
         });
     }
 
-    static async update(req, transaction) {
-        return await MasterSupplierModel.update(req, {
+    static async update(payload, transaction) {
+        const { uuid, faskes_uuid,  ...dataToUpdate} = payload;
+        return await MasterSupplierModel.update(dataToUpdate, {
             where: {
-                uuid: req.uuid,
+                uuid: uuid,
+                faskes_uuid: faskes_uuid
             },
             transaction
         });
     }
 
-    static async delete(req) {
+    static async delete(payload) {
         return await MasterSupplierModel.update(
-            {
-                deleted_at: toEpochDate(new Date()),
+            { 
+                deleted_at: toEpochDate(new Date())
             },
-            {
-                where: {
-                    uuid: req.uuid,
-                },
+            { 
+                where: { 
+                    uuid: payload.uuid, 
+                    faskes_uuid: payload.faskes_uuid 
+                }
             }
         );
     }

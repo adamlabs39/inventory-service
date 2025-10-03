@@ -1,6 +1,6 @@
 import PenerimaanReturRepository from "../repositories/penerimaan-retur-repository.js";
 import ZodValidator from "../validations/zod-validator.js";
-import PenerimaanReturValidation from "../validations/penerimaan-retur-validation.js";
+import PenerimaanReturValidation from "../validations/penerimaan-validation.js";
 import BadRequestException from "../errors/bad-request-exception.js";
 
 export default class PenerimaanReturService {

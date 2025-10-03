@@ -1,10 +1,5 @@
 import {z} from "zod";
-import {
-    faskesUuidRequired,
-    required,
-    uuidRequired,
-} from "./message-validation-error.js";
-import DatamasterSupplierRepository from "../repositories/datamaster-supplier-repository.js";
+import { faskesUuidRequired, required, uuidRequired } from "./message-validation-error.js";
 
 export default class DatamasterValidation {
     static CREATE_SATUAN = z.object({
@@ -49,31 +44,6 @@ export default class DatamasterValidation {
         kabupaten_code: z.string().min(1, required),
         kelurahan_code: z.string().min(1, required),
         kode_pos: z.string().min(1, required),
-    });
-
-    static CREATE_SUPPLIER = z.object({
-        faskes_uuid: z.string().min(1, faskesUuidRequired),
-        status: z.boolean(),
-        name: z.string().min(1, required),
-        code: z
-            .string()
-            .min(1, "Kode harus diisi")
-            .refine(
-                (codes) => {
-                    try {
-                        return isCodeUnique(codes);
-                    } catch (err) {
-                        return false; // Gagal validasi
-                    }
-                },
-                {message: "Kode sudah digunakan"}
-            ),
-        alamat: z.string().min(1, required),
-        kecamatan_code: z.string().min(1, required),
-        provinsi_code: z.string().min(1, required),
-        kabupaten_code: z.string().min(1, required),
-        kelurahan_code: z.string().min(1, required),
-        no_tlp: z.string().min(1, required),
     });
 
     static CREATE_LOKASI_STOK = z.object({
@@ -124,25 +94,6 @@ export default class DatamasterValidation {
         code: z.string().min(1, required),
         alamat: z.string().min(1, required),
         demografi_wilayah_code: z.string().min(1, required),
-    });
-
-    static UPDATE_SUPPLIER = z.object({
-        uuid: z.string().min(1, uuidRequired),
-        faskes_uuid: z.string().min(1, faskesUuidRequired),
-        status: z.boolean(),
-        name: z.string().min(1, required),
-        code: z.string().min(1, required),
-        alamat: z.string().min(1, required),
-        supplier_items: z.array(z.object({"kategori_item": z.string().min(1, required)})),
-        // demografi_wilayah_code: z.string().min(1, required),
-    });
-
-    static GET_ALL_SATUAN = z.object({
-        faskes_uuid: z.string().min(1, faskesUuidRequired),
-    });
-
-    static DELETE_SATUAN = z.object({
-        uuid: z.string().min(1, uuidRequired),
     });
 
     static CREATE_CARA_PAKAI = z.object({
@@ -214,30 +165,4 @@ export default class DatamasterValidation {
     static GET_AVAILABLE_JENIS_STOK = z.object({
         item_medis_uuid: z.string().min(1, required),
     });
-}
-
-async function isCodeUnique(code) {
-    const result = await DatamasterSupplierRepository.getCode(code);
-
-    // Jika result bernilai null atau undefined
-    if (!result) {
-        return true; // Jika tidak ada data, anggap kode unik
-    }
-    // Jika result berupa array
-    if (Array.isArray(result)) {
-        return !result.includes(code);
-    }
-
-    // Jika result berupa objek dengan array `data`
-    if (result.data && Array.isArray(result.data)) {
-        const codes = result.data.map((item) => item.code);
-        return !codes.includes(code);
-    }
-
-    // Jika result adalah objek tunggal
-    if (result.code) {
-        return result.code !== code;
-    }
-
-    return true; // Default jika tidak ada data
 }

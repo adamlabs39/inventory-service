@@ -7,8 +7,8 @@ import {dbSeeder} from "./seeders/db-seeder.js";
 import MODELMERGE from "./models/model-synchronize.js";
 import efp from "express-fileupload";
 
-const APPLICATION_PORT = process.env.APPLICATION_PORT;
-const APPLICATION_HOST = process.env.APPLICATION_HOST;
+const APPLICATION_PORT = process.env.APPLICATION_PORT || 8080;
+const APPLICATION_HOST = process.env.APPLICATION_HOST || 'localhost';
 
 const app = express();
 app.use(
