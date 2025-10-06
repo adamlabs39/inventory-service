@@ -9,7 +9,6 @@ import PengadaanValidation from "../validations/pengadaan-validation.js";
 export default class PengadaanBarangService {
   static async create(payload) {
     const validatedData = await PengadaanValidation.CREATE_PEMBELIAN_BARANG.parseAsync(payload);
-    
     const supplier = await DatamasterSupplierRepository.getByUuid({
       uuid: validatedData.supplier_uuid,
       faskes_uuid: validatedData.faskes_uuid
@@ -21,13 +20,19 @@ export default class PengadaanBarangService {
 
     const transaction = await sequelizeInstance.transaction();
     try {
+
+      const subTotal = validatedData.items.reduce(
+            (acc, item) => acc + (item.qty_order * item.harga_satuan), 0 
+        );
+
+      const totalPpn = subTotal * (validatedData.ppn / 100);
+      const grandTotal = subTotal + totalPpn - (validatedData.diskon ?? 0) + (validatedData.materai ?? 0);
+
       const dataPembelianBarang = {
         ...validatedData,
         no_po: Utils.generate4Code("PO"),
         total_item: validatedData.items.length,
-        grand_total: validatedData.items.reduce(
-          (acc, item) => acc + item.qty_order * item.harga_satuan,
-        ),
+        grand_total: grandTotal,
         status: "pending",
       };
       const po = await InventoryBarangRepository.createPembelianBarang(dataPembelianBarang, transaction,)

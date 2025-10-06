@@ -6,55 +6,71 @@ import ReturPengembalianController from "../controllers/retur-pengembalian-contr
 
 const pengadaanBarangRoutes = express.Router();
 
-// Pembelian Barang
+// Route untuk membuat pembelian barang baru
 pengadaanBarangRoutes.post(
     `/pembelian-barang`,
     PengadaanBarangController.create
 );
+
+// Route untuk mendapatkan semua data pembelian barang
 pengadaanBarangRoutes.get(
     `/pembelian-barang`,
     PengadaanBarangController.getAll
 );
+
+// Route untuk mendapatkan detail pembelian barang berdasarkan UUID
 pengadaanBarangRoutes.get(
     `/pembelian-barang/:uuid`,
     PengadaanBarangController.getDetail
 );
+
+// Route untuk memperbarui data pembelian barang berdasarkan UUID
 pengadaanBarangRoutes.put(
     `/pembelian-barang/:uuid`,
     PengadaanBarangController.update
 );
+
+// Route untuk membatalkan pembelian barang berdasarkan UUID
 pengadaanBarangRoutes.put(
     `/pembelian-barang-batal/:uuid`,
     PengadaanBarangController.cancelPembelianBarang
 );
-// Verifikasi Barang
+
+// Route untuk verifikasi pembelian barang berdasarkan UUID
 pengadaanBarangRoutes.put(
     `/verifikasi-barang/:uuid`,
     VerifikasiBarangController.verifikasiPembelianBarang
 );
-// Penerimaan Barang
-pengadaanBarangRoutes.put(
-    `/penerimaan-barang/:uuid`,
-    PenerimaanBarangController.createPenerimaan
-);
+
+// Route untuk mendapatkan semua data retur supplier
 pengadaanBarangRoutes.get(
     `/retur-supplier`, 
     ReturPengembalianController.getAll
 );
+
+// Route untuk mendapatkan daftar faktur yang tersedia untuk retur
 pengadaanBarangRoutes.get(
     `/retur-supplier/available-faktur`, 
     ReturPengembalianController.getAvailableFaktur
 );
+
+// Route untuk mendapatkan faktur tertentu berdasarkan UUID
 pengadaanBarangRoutes.get(
     `/retur-supplier/available-faktur/:uuid`, 
     ReturPengembalianController.getFaktur
 );
+
+// Route untuk mendapatkan detail retur supplier berdasarkan UUID
 pengadaanBarangRoutes.get(
     `/retur-supplier/:uuid`, ReturPengembalianController.getByUuid
 );
+
+// Route untuk membuat retur supplier baru
 pengadaanBarangRoutes.post(
     `/retur-supplier`, ReturPengembalianController.create
 );
+
+// Route untuk menyetujui penggantian barang retur supplier berdasarkan UUID
 pengadaanBarangRoutes.put(
     `/retur-supplier/:uuid`, 
     ReturPengembalianController.acceptReplacement

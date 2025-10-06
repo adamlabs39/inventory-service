@@ -3,7 +3,16 @@ import RiwayatTarifController from "../controllers/riwayat-tarif-controller.js";
 
 const riwayatTarifRoutes = express.Router();
 
-riwayatTarifRoutes.get(`/`, RiwayatTarifController.getAll);
-riwayatTarifRoutes.get(`/:uuid`, RiwayatTarifController.getByUuid);
+// Route untuk mendapatkan semua data riwayat tarif
+riwayatTarifRoutes.get(
+    `/`, 
+    RiwayatTarifController.getAll
+);
+
+// Route untuk mendapatkan detail riwayat tarif berdasarkan UUID
+riwayatTarifRoutes.get(
+    `/:uuid`, 
+    RiwayatTarifController.getByUuid
+);
 
 export default riwayatTarifRoutes;

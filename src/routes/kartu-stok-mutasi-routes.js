@@ -4,17 +4,19 @@ import RiwayatMutasiController from "../controllers/riwayat-mutasi-controller.js
 
 const kartuStokMutasiRoutes = express.Router();
 
-// KARTU STOK
+// Route untuk menampilkan semua data kartu stok
 kartuStokMutasiRoutes.get(
     `/kartu-stok`, 
     KartuStokController.getAll
 );
 
-// RIWAYAT MUTASI
+// Route untuk menampilkan semua data riwayat mutasi
 kartuStokMutasiRoutes.get(
     `/mutasi`, 
     RiwayatMutasiController.getAll
 );
+
+// Route untuk menambahkan riwayat mutasi baru
 kartuStokMutasiRoutes.post(
     `/mutasi`, RiwayatMutasiController.create
 );

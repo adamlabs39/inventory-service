@@ -9,4 +9,12 @@ export default class ItemMedisRepository {
             attributes: ['code', 'uuid'],
         })
     }
+
+    static async getByUuid({ uuid }) {
+        return await ItemMedisModel.findOne({
+            where: {
+                uuid: uuid
+            }
+        });
+    }
 }

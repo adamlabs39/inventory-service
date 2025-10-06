@@ -46,7 +46,12 @@ PembelianBarangSupplierItemModel.belongsTo(ItemMedisModel, {
 
 export default class InventoryBarangRepository {
     static async createPembelianBarang(req, transaction) {
-        return await PembelianBarangSupplierModel.create(req, {transaction});
+        const dataForModel = { ...req };
+        if (dataForModel.hasOwnProperty('is_cito')) {
+            dataForModel.isCito = req.is_cito;
+            delete dataForModel.is_cito;
+        }
+        return await PembelianBarangSupplierModel.create(dataForModel, {transaction});
     }
 
     // create prescription item
@@ -239,8 +244,11 @@ export default class InventoryBarangRepository {
             {
                 status: "diterima",
                 no_faktur: payload.no_faktur,
+                // no_surat_jalan: data.no_surat_jalan,
+                petugas_penerima: payload.petugas_penerima,
+                petugas_penerima_uuid: payload.petugas_penerima_uuid,
                 tanggal_faktur: payload.tanggal_faktur,
-                tanggal_terima: payload.tanggal_terima,
+                tanggal_penerimaan: payload.tanggal_terima,
             },
             {
                 where: {
