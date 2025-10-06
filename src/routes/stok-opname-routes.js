@@ -3,13 +3,40 @@ import StokOpnameController from "../controllers/stok-opname-controller.js";
 
 const stokOpnameRoutes = express.Router();
 
-stokOpnameRoutes.get(`/`, StokOpnameController.getAll);
-stokOpnameRoutes.post(`/`, StokOpnameController.create);
+// Route untuk mendapatkan semua data stok opname
+stokOpnameRoutes.get(
+    `/`, 
+    StokOpnameController.getAll
+);
 
-stokOpnameRoutes.get(`/kartu-stok`, StokOpnameController.getStockCard);
-stokOpnameRoutes.post(`/import`, StokOpnameController.importStockCard);
-stokOpnameRoutes.post(`/delete-items`, StokOpnameController.deleteItems);
+// Route untuk membuat stok opname baru
+stokOpnameRoutes.post(
+    `/`, 
+    StokOpnameController.create
+);
 
-stokOpnameRoutes.get(`/:stok_opname_uuid`, StokOpnameController.getDetail);
+// Route untuk mendapatkan kartu stok (stock card)
+stokOpnameRoutes.get(
+    `/kartu-stok`, 
+    StokOpnameController.getStockCard
+);
+
+// Route untuk import data kartu stok
+stokOpnameRoutes.post(
+    `/import`, 
+    StokOpnameController.importStockCard
+);
+
+// Route untuk menghapus item-item pada stok opname
+stokOpnameRoutes.post(
+    `/delete-items`, 
+    StokOpnameController.deleteItems
+);
+
+// Route untuk mendapatkan detail stok opname berdasarkan UUID
+stokOpnameRoutes.get(
+    `/:stok_opname_uuid`, 
+    StokOpnameController.getDetail
+);
 
 export default stokOpnameRoutes;

@@ -34,6 +34,7 @@ export default class ReturSupplierValidation {
 
     static REPLACEMENT_TYPE = z.object({
         type: z.enum(["barang", "uang"]),
+        faskes_uuid: z.string().min(1, required),
         tanggal_penggantian: z.number().optional(),
         uuid: z.string().min(1, required),
     });
@@ -43,7 +44,6 @@ export default class ReturSupplierValidation {
         qty_retur: z.number().min(1, required),
         konversi_uuid: z.string().optional(),
         harga_satuan: z.number().min(1, required),
-        exp_date: z.string().optional(),
     }));
 
     static REPLACEMENT_PRICE = z.object({

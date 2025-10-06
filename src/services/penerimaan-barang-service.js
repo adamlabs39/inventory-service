@@ -39,6 +39,8 @@ export default class PenerimaanBarangService {
             });
 
             const itemsToCreateStock = purchaseOrder.pbsu.map(itemPo => {
+                const itemFromBody = validatedData.items?.find(i => i.uuid === itemPo.uuid);
+
                 const correspondingItem = itemMedisJenisStokList.find(
                     ims => ims.item_medis_uuid === itemPo.item_uuid
                 );
@@ -46,13 +48,14 @@ export default class PenerimaanBarangService {
                 if (!correspondingItem) {
                     throw new InternalServerException(`Data Item Medis Jenis Stok untuk item ${itemPo.item_uuid} tidak ditemukan.`);
                 }
+
                 return {
-                    exp_date: validatedData.items?.find(i => i.uuid === itemPo.uuid)?.exp_date,
+                    exp_date: itemFromBody?.exp_date,
                     stok: itemPo.qty_order,
                     sisa_stok: itemPo.qty_order,
                     konversi_uuid: itemPo.konversi_uuid,
                     lokasi_stok_uuid: purchaseOrder.lokasi_stok_uuid,
-                    item_medis_jenis_stok_uuid: correspondingItem.uuid, 
+                    item_medis_jenis_stok_uuid: correspondingItem.uuid,
                     harga_satuan: itemPo.harga_satuan,
                     no_po: purchaseOrder.no_po,
                     faskes_uuid: validatedData.faskes_uuid,
