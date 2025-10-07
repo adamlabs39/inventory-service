@@ -1,6 +1,7 @@
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 import PengadaanValidation from "../validations/pengadaan-validation.js";
 import NotfoundException from "../errors/notfound-exception.js";
+import BadRequestException from "../errors/bad-request-exception.js";
 
 export default class VerifikasiBarangService {
   static async verifikasiPembelianBarang(payload) {

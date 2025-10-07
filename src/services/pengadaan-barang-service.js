@@ -90,7 +90,12 @@ export default class PengadaanBarangService {
       kategori_item: result.kategori_item ?? "",
       cito: !!result.isCito,
       jenis_stok: result.jenis_stok?.name ?? "",
-      catatan: result.catatan_po ?? "",
+      tanggal_penerimaan: result.tanggal_penerimaan ?? "",
+      no_faktur: result.no_faktur ?? "",
+      tanggal_faktur: result.tanggal_faktur ?? "",
+      catatan_po: result.catatan_po ?? "",
+      catatan_penerimaan: result.catatan_penerimaan ?? "",
+      no_surat_jalan: result.no_surat_jalan ?? "",
       items:
         result.pbsu?.map((item) => ({
           uuid: item.uuid,
@@ -111,7 +116,10 @@ export default class PengadaanBarangService {
       materai: result.materai ?? 0,
       ppn: result.ppn ?? 0,
       grand_total: result.grand_total ?? 0,
-      petugas_pembuat_po: result.petugas_pembuat_po ?? "",
+      ongkos_kirim: result.ongkos_kirim ?? 0,
+      petugas_pembuat_po: result.petugas_pembuat_po ?? "-",
+      petugas_penerima: result.petugas_penerima ?? "-",
+      petugas_pengirim: result.petugas_pengirim ?? "-",
     };
   }
 

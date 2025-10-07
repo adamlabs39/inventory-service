@@ -155,7 +155,6 @@ export default class InventoryBarangRepository {
                     "created_at",
                     "updated_at",
                     "faskes_uuid",
-                    "no_surat_jalan",
                 ],
             },
             include: [
@@ -250,11 +249,12 @@ export default class InventoryBarangRepository {
             {
                 status: "diterima",
                 no_faktur: payload.no_faktur,
-                // no_surat_jalan: data.no_surat_jalan,
+                no_surat_jalan: payload.no_surat_jalan,
                 petugas_penerima: payload.petugas_penerima,
                 petugas_penerima_uuid: payload.petugas_penerima_uuid,
                 tanggal_faktur: payload.tanggal_faktur,
                 tanggal_penerimaan: payload.tanggal_terima,
+                catatan_penerimaan: payload.catatan_penerimaan,
             },
             {
                 where: {
