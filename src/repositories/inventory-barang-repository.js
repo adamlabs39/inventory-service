@@ -320,7 +320,7 @@ export default class InventoryBarangRepository {
             include: {
                 model: MasterSupplierModel,
                 as: 'spplr',
-                required: false,
+                required: true,
                 attributes: ['name']
             }
         };

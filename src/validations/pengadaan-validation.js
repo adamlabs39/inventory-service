@@ -54,6 +54,7 @@ export default class PengadaanValidation {
         supplier_uuid: z.string().uuid().optional(),
         tanggal_pembelian: z.number().optional(),
         metode_pembelian: z.string().optional(),
+        catatan_po: z.string().optional(),
         is_cito: z.boolean().optional(),
         diskon: z.number().optional(),
         materai: z.number().optional(),

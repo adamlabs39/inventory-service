@@ -19,10 +19,6 @@ export default class ReturSupplierService {
 
         const result = await ReturSupplierRepository.getAll(validatedReq);
 
-        if (!result.data || result.data.length === 0) {
-            throw new NotfoundException("Data tidak ada yang cocok");
-        }
-
         result.data = result.data.map((item) => {
             return {
                 uuid: item.uuid,
@@ -225,7 +221,7 @@ export default class ReturSupplierService {
                 tanggal_faktur: item.tanggal_faktur,
                 no_penerimaan: item.no_po,
                 tanggal_penerimaan: item.tanggal_penerimaan,
-                supplier: item.supplier?.name,
+                supplier: item.spplr?.name || "Nama Supplier Tidak Tersedia",
             }
         })
 
@@ -249,7 +245,7 @@ export default class ReturSupplierService {
             tanggal_faktur: result.tanggal_faktur,
             no_penerimaan: result.no_po,
             tanggal_penerimaan: result.tanggal_penerimaan,
-            supplier: result.spplr?.name,
+            supplier: result.spplr?.name || "Nama Supplier Tidak Tersedia",
             lokasi_stok: result.lks?.name,
             lokasi_stok_uuid: result.lokasi_stok_uuid,
             jenis_item: result.jenis_item,
@@ -263,11 +259,13 @@ export default class ReturSupplierService {
                 return {
                     item_uuid: item.item_uuid,
                     name: item.item_medis?.name,
-                    konversi: `${item.konversi?.satuan_pembelian ?? "-"}/${item.konversi?.konversi ?? "-"}`,
-                    satuan_penggunaan: item.konversi?.satuan_penggunaan,
+                    satuan_beli: `${item.cnvrsn?.satuan_pembelian ?? "-"}/${
+                        item.cnvrsn?.konversi ?? ""
+                      } ${item.cnvrsn?.satuan_penggunaan ?? "-"}`,
+                    satuan_penggunaan: item.cnvrsn?.satuan_penggunaan ?? "-",
                     konversi_uuid: item.konversi_uuid,
                     exp_date: formattedExpDate,
-                    qty: item.qty_terima,
+                    qty: item.qty_order,
                     harga_satuan: item.harga_satuan,
                 }
             })
