@@ -127,6 +127,12 @@ export default class InventoryBarangRepository {
                     as: "spplr",
                     required: false,
                     attributes: ["name"]
+                },
+                {
+                    model: JenisStokModel,
+                    as: "jenis_stok",
+                    required: false,
+                    attributes: ["name"]
                 }
             ],
         };
