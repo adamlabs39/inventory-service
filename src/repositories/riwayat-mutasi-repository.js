@@ -62,7 +62,7 @@ export default class RiwayatMutasiRepository {
         return await Pagination.init(RiwayatMutasiModel, req, option);
     }
 
-    static async create(req, transaction) {
-        await RiwayatMutasiModel.bulkCreate(req, {transaction});
+    static async create(req, options = {}) {
+        await RiwayatMutasiModel.bulkCreate(req, options);
     }
 }

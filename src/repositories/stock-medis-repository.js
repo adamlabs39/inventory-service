@@ -492,7 +492,8 @@ export default class StockMedisRepository {
                 'lokasi_stok.uuid',
                 'item_medis_jenis_stok.uuid',
                 'item_medis_jenis_stok->item_medis.uuid',
-                'item_medis_jenis_stok->item_medis->satuan_penggunaan.uuid', 
+                'item_medis_jenis_stok->item_medis->satuan_penggunaan.uuid',
+                'item_medis_jenis_stok->detail_stok.uuid',
             ],
             include: [
                 {
@@ -509,18 +510,26 @@ export default class StockMedisRepository {
                     where: {
                         item_medis_uuid: { [Op.in]: req.item_uuids }
                     },
-                    include: [{
-                        model: ItemMedisModel,
-                        as: 'item_medis',
-                        attributes: ['uuid', 'name'],
-                        required: true,
-                        include: [{
-                            model: SatuanModel,
-                            as: 'satuan_penggunaan', 
+                    include: [
+                        {
+                            model: ItemMedisModel,
+                            as: 'item_medis',
                             attributes: ['uuid', 'name'],
-                            required: false 
-                        }]
-                    }]
+                            required: true,
+                            include: [{
+                                model: SatuanModel,
+                                as: 'satuan_penggunaan', 
+                                attributes: ['uuid', 'name'],
+                                required: false 
+                            }]
+                        },
+                        {
+                            model: JenisStokModel,
+                            as: 'detail_stok',
+                            attributes: ['uuid', 'name'],
+                            required: true
+                        }
+                    ]
                 }
             ],
             raw: true

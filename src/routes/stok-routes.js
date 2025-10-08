@@ -8,4 +8,9 @@ stockRoutes.get(
     StockController.getAvailableStock,
 )
 
+stockRoutes.post(
+    '/reduce',
+    StockController.reduceStock,
+)
+
 export default stockRoutes;

@@ -251,6 +251,7 @@ export default class InventoryBarangRepository {
                 no_faktur: payload.no_faktur,
                 no_surat_jalan: payload.no_surat_jalan,
                 petugas_penerima: payload.petugas_penerima,
+                petugas_pengirim: payload.petugas_pengirim,
                 petugas_penerima_uuid: payload.petugas_penerima_uuid,
                 tanggal_faktur: payload.tanggal_faktur,
                 tanggal_penerimaan: payload.tanggal_terima,
