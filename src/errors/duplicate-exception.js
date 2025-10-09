@@ -1,11 +1,11 @@
-export default class BadRequestException extends Error {
+export default class DuplicateException extends Error{
     constructor(message) {
       super(message);
       this.message = message;
-      this.status = 400;
+      this.code = 409;
       this.errors = [
         {
-          type: "Bad Request",
+          type: "conflict",
           message: message,
         }
       ];

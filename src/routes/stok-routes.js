@@ -1,6 +1,8 @@
 import express from "express";
 import StockController from "../controllers/stock-controller.js";
 
+// Version api untuk management stok yg lebih fleksibel
+
 const stockRoutes = express.Router();
 
 stockRoutes.get(

@@ -12,6 +12,8 @@ import StockMedisRepository from "../repositories/stock-medis-repository.js";
 import KonfigurasiHargaRepository from "../repositories/konfigurasi-harga-repository.js";
 import RiwayatMutasiService from "./riwayat-mutasi-service.js";
 import ItemMedisRepository from "../repositories/item-medis-repository.js";
+import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
+import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class ReturSupplierService {
     static async getAll(payload) {
@@ -273,15 +275,24 @@ export default class ReturSupplierService {
     }
 
     static async acceptReplacement(payload) {
-        const validatedData = await ReturSupplierValidation.REPLACEMENT_TYPE.parseAsync(payload);
-
-        const retur = await ReturSupplierRepository.getDetail({ uuid: validatedData.uuid, faskes_uuid: validatedData.faskes_uuid });
+        const validatedData = await ReturSupplierValidation.ACCEPT_REPLACEMENT.parseAsync(payload);
+        const searchParams = { uuid: validatedData.uuid, faskes_uuid: validatedData.faskes_uuid };
+        
+        const retur = await ReturSupplierRepository.getDetail(searchParams);
 
         if (!retur) {
-            throw new NotfoundException("Data retur dengan id ini tidak ditemukan");
+            throw new NotfoundException(`Data retur dengan UUID ${validatedData.uuid} tidak ditemukan.`);
         }
 
+        if (!retur.pembelian_supplier_uuid) {
+            throw new InternalServerException("Properti 'pembelian_supplier_uuid' tidak ditemukan pada objek retur.");
+        }        
+
         const pembelian = await PengadaanBarangService.getDetail({ uuid: retur.pembelian_supplier_uuid, faskes_uuid: validatedData.faskes_uuid });
+
+        if (!pembelian) {
+            throw new NotfoundException(`Data pembelian dengan UUID ${retur.pembelian_supplier_uuid} tidak ditemukan.`);
+        }
 
         const transaction = await sequelizeInstance.transaction();
 
@@ -294,12 +305,9 @@ export default class ReturSupplierService {
 
         try {
             if (validatedData.type === "uang") {
-                const validatedPrice = await ReturSupplierValidation.REPLACEMENT_PRICE.parseAsync(validatedData);
-                updateSupplierReq.total_pengembalian_uang = validatedPrice.harga;
+                updateSupplierReq.total_pengembalian_uang = validatedData.harga;
             } else if (validatedData.type === "barang") {
-                const validatedItems = await ReturSupplierValidation.REPLACEMENT_ITEM.parseAsync(validatedData.items);
-
-                const itemsToCreate = validatedItems.map((item) => ({
+                const itemsToCreate = validatedData.items.map((item) => ({
                     ...item,
                     faskes_uuid: validatedData.faskes_uuid,
                     retur_supplier_uuid: validatedData.uuid,
@@ -308,15 +316,19 @@ export default class ReturSupplierService {
 
                 await ReturSupplierRepository.createItems(itemsToCreate, transaction);
 
-                const itemMedisUuids = validatedItems.map(item => item.item_uuid);
-                const itemJenisStokMap = await ItemMedisJenisStokRepository.getMapByItemUuids({
+                const itemMedisUuids = validatedData.items.map(item => item.item_uuid);
+                const itemJenisStokList  = await ItemMedisJenisStokRepository.getForPengadaanBarang({
                     item_medis_uuids: itemMedisUuids,
                     jenis_stok_uuid: pembelian.jenis_stok_uuid,
                     faskes_uuid: validatedData.faskes_uuid,
                 });
 
+                const itemJenisStokMap = new Map(
+                    itemJenisStokList.map(item => [item.item_medis_uuid, item.uuid])
+                );
+
                 const stocks = itemsToCreate.map((item) => {
-                    const itemJenisStokUuid = itemJenisStokMap[item.item_uuid];
+                    const itemJenisStokUuid = itemJenisStokMap.get(item.item_uuid);
                     if (!itemJenisStokUuid) {
                         throw new InternalServerException(`Konfigurasi jenis stok untuk item ${item.item_uuid} tidak ditemukan.`);
                     }

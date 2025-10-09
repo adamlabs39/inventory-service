@@ -71,7 +71,7 @@ export default class PengeluaranUnitService {
                     }, transaction);
 
                     if (!stock) {
-                        throw new BadRequestException("Stok medis tidak ditemukan");
+                        throw new BadRequestException(`Stok medis dengan UUID ${item.stock_uuid} tidak ditemukan.`);
                     }
 
                     stock = stock.dataValues;

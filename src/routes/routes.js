@@ -38,7 +38,7 @@ routes.use(`${baseUrl}/stok-opname`, stokOpnameRoutes);
 // RIWAYAT TARIF
 routes.use(`${baseUrl}/riwayat-tarif`, riwayatTarifRoutes);
 
-// STOK
+// STOK (VERSION UPGRADE)
 routes.use(`${baseUrl}/stok`, stockRoutes);
 
 export default routes;

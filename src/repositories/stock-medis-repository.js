@@ -154,6 +154,10 @@ export default class StockMedisRepository {
 
             });
 
+            if (!stock) {
+                throw new BadRequestException(`Stok medis dengan UUID ${req.stock_medis_uuid} tidak ditemukan.`);
+            }
+
             if (stock.sisa_stok < req.quantity) {
                 throw new BadRequestException(`${stock.dataValues.item_medis_jenis_stok?.dataValues?.item_medis?.name} not enough or empty`);
             }
