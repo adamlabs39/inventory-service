@@ -43,7 +43,7 @@ export default class RiwayatMutasiService {
         return result;
     }
 
-    static async create(req, transaction) {
+    static async create(req, options = {}) {
         ZodValidator.validate(RiwayatMutasiValidation.CREATE, req);
 
         for (const item of req.items) {
@@ -99,6 +99,6 @@ export default class RiwayatMutasiService {
             })
         }
 
-        await RiwayatMutasiRepository.create(mutasi, transaction);
+        await RiwayatMutasiRepository.create(mutasi, options);
     }
 }

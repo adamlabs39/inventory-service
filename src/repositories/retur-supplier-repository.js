@@ -58,6 +58,7 @@ export default class ReturSupplierRepository {
         return await ReturSupplierModel.findOne({
             where: {
                 uuid: req.uuid,
+                faskes_uuid: req.faskes_uuid,
                 deleted_at: {
                     [Op.is]: null,
                 },
@@ -81,7 +82,7 @@ export default class ReturSupplierRepository {
                 {
                     model: PembelianBarangSupplierModel,
                     as: "pembelian_barang_supplier",
-                    required: false,
+                    required: true,
                     include: [
                         {
                             model: JenisStokModel,

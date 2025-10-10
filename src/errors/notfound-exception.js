@@ -7,7 +7,7 @@ export default class NotfoundException extends Error {
       {
         type: "notfound",
         message: message,
-      },
+      }
     ];
   }
 }

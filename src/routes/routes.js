@@ -7,6 +7,7 @@ import riwayatTarifRoutes from './riwayat-tarif-routes.js';
 import kartuStokMutasiRoutes from "./kartu-stok-mutasi-routes.js";
 import stokOpnameRoutes from "./stok-opname-routes.js";
 import stokAdjustmentRoutes from './stok-adjustment-routes.js';
+import stockRoutes from "./stok-routes.js";
 
 const apiBase = process.env.API_BASE || "api";
 const apiVersion = process.env.API_VERSION || "v3";
@@ -36,5 +37,8 @@ routes.use(`${baseUrl}/stok-opname`, stokOpnameRoutes);
 
 // RIWAYAT TARIF
 routes.use(`${baseUrl}/riwayat-tarif`, riwayatTarifRoutes);
+
+// STOK (VERSION UPGRADE)
+routes.use(`${baseUrl}/stok`, stockRoutes);
 
 export default routes;

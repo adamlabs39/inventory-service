@@ -5,10 +5,11 @@ import {
     ConversionModel,
     ItemMedisJenisStokModel,
     ItemMedisModel,
-    JenisStokModel, ManufactureModel,
+    JenisStokModel, LokasiStokModel, ManufactureModel,
     SatuanModel
 } from "@adameds/model-sdk/farmasi";
 import Pagination from "../helpers/pagination.js";
+import sequelizeInstance from "../configurations/sequelize-instance.js";
 
 export default class StockMedisRepository {
     static async reduceQuantity(req, t) {
@@ -152,6 +153,10 @@ export default class StockMedisRepository {
                 ],
 
             });
+
+            if (!stock) {
+                throw new BadRequestException(`Stok medis dengan UUID ${req.stock_medis_uuid} tidak ditemukan.`);
+            }
 
             if (stock.sisa_stok < req.quantity) {
                 throw new BadRequestException(`${stock.dataValues.item_medis_jenis_stok?.dataValues?.item_medis?.name} not enough or empty`);
@@ -470,5 +475,68 @@ export default class StockMedisRepository {
             attributes: ["exp_date", "harga_satuan", "created_at", "no_po"],
             order: [["created_at", "DESC"]],
         })
+    }
+
+    static async findStockByItem(req) {
+        const whereClause = {
+            sisa_stok: { [Op.gt]: 0 }
+        }
+
+        if (req.lokasi_stok_uuid) {
+            whereClause.lokasi_stok_uuid = req.lokasi_stok_uuid;
+        }
+
+        return await StockMedisModel.findAll({
+            attributes: [
+                [sequelizeInstance.fn('SUM', sequelizeInstance.col('sisa_stok')), 'jumlah_tersedia'],
+                [sequelizeInstance.fn('AVG', sequelizeInstance.col('harga_satuan')), 'harga_satuan'],
+            ],
+            where: whereClause,
+            group: [
+                'lokasi_stok.uuid',
+                'item_medis_jenis_stok.uuid',
+                'item_medis_jenis_stok->item_medis.uuid',
+                'item_medis_jenis_stok->item_medis->satuan_penggunaan.uuid',
+                'item_medis_jenis_stok->detail_stok.uuid',
+            ],
+            include: [
+                {
+                    model: LokasiStokModel,
+                    as: 'lokasi_stok',
+                    attributes: ['uuid', 'name'],
+                    required: true
+                },
+                {
+                    model: ItemMedisJenisStokModel,
+                    as: 'item_medis_jenis_stok',
+                    attributes: ['uuid', 'item_medis_uuid'],
+                    required: true,
+                    where: {
+                        item_medis_uuid: { [Op.in]: req.item_uuids }
+                    },
+                    include: [
+                        {
+                            model: ItemMedisModel,
+                            as: 'item_medis',
+                            attributes: ['uuid', 'name'],
+                            required: true,
+                            include: [{
+                                model: SatuanModel,
+                                as: 'satuan_penggunaan', 
+                                attributes: ['uuid', 'name'],
+                                required: false 
+                            }]
+                        },
+                        {
+                            model: JenisStokModel,
+                            as: 'detail_stok',
+                            attributes: ['uuid', 'name'],
+                            required: true
+                        }
+                    ]
+                }
+            ],
+            raw: true
+        });
     }
 }

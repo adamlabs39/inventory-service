@@ -127,6 +127,12 @@ export default class InventoryBarangRepository {
                     as: "spplr",
                     required: false,
                     attributes: ["name"]
+                },
+                {
+                    model: JenisStokModel,
+                    as: "jenis_stok",
+                    required: false,
+                    attributes: ["name"]
                 }
             ],
         };
@@ -149,7 +155,6 @@ export default class InventoryBarangRepository {
                     "created_at",
                     "updated_at",
                     "faskes_uuid",
-                    "no_surat_jalan",
                 ],
             },
             include: [
@@ -244,11 +249,13 @@ export default class InventoryBarangRepository {
             {
                 status: "diterima",
                 no_faktur: payload.no_faktur,
-                // no_surat_jalan: data.no_surat_jalan,
+                no_surat_jalan: payload.no_surat_jalan,
                 petugas_penerima: payload.petugas_penerima,
+                petugas_pengirim: payload.petugas_pengirim,
                 petugas_penerima_uuid: payload.petugas_penerima_uuid,
                 tanggal_faktur: payload.tanggal_faktur,
                 tanggal_penerimaan: payload.tanggal_terima,
+                catatan_penerimaan: payload.catatan_penerimaan,
             },
             {
                 where: {
@@ -320,7 +327,7 @@ export default class InventoryBarangRepository {
             include: {
                 model: MasterSupplierModel,
                 as: 'spplr',
-                required: false,
+                required: true,
                 attributes: ['name']
             }
         };
