@@ -9,17 +9,17 @@ import zodErrorParser from "../helpers/zod-error-parser.js";
 
 const errorMiddleware = (error, request, response, nextFunction) => {
     if (error instanceof NotfoundException) {
-        return response.status(error.code).json(errorResponse(error.message, error.errors));
+        return response.status(error.code).json(errorResponse("Data tidak ditemukan", error.errors));
     } else if (error instanceof UnauthorizedException) {
         return response.status(error.code).json(errorResponse(error.message));
     } else if (error instanceof BadRequestException) {
-        response.status(error.status).json(errorResponse("Bad Request", error.errors));
+        response.status(error.status).json(errorResponse("Permintaan tidak valid", error.errors));
     } else if (error instanceof DuplicateException) {
         response.status(error.code).json(errorResponse(error.message, error.errors));
     } else if (error instanceof UniqueConstraintError) {
         response.status(400).json(errorResponse("Duplicate Data", error.errors));
     } else if (error instanceof ZodError) {
-        response.status(400).json(errorResponse("Validation Error", zodErrorParser(error.errors)));
+        response.status(400).json(errorResponse("Validasi gagal", zodErrorParser(error.errors)));
     } else {
         response.status(500).json(
         errorResponse("Internal Server Error", [

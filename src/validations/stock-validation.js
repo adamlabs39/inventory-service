@@ -19,4 +19,19 @@ export default class StockValidation {
         petugas: z.string().min(1, "Nama petugas wajib diisi"),
         keterangan: z.object({ description: z.string() }).optional()
     });
+
+    static INCREASE_STOCK = z.object({
+      faskes_uuid: z.string().uuid(),
+      sumber_mutasi: z.string().min(1, "Sumber mutasi wajib diisi"),
+      kode_referensi: z.string().min(1, "Kode referensi wajib diisi"),
+      petugas: z.string().min(1, "Nama petugas wajib diisi"),
+      items: z.array(z.object({
+        item_uuid: z.string().uuid("Item UUID tidak valid"),
+        lokasi_stok_uuid: z.string().uuid("Lokasi stok UUID tidak valid"),
+        jenis_stok_uuid: z.string().uuid("Jenis stok UUID tidak valid"),
+        quantity: z.number().int().positive("Kuantitas harus berupa angka positif"),
+        exp_date: z.string().datetime("Format tanggal kedaluwarsa tidak valid"),
+        harga_satuan: z.number().nonnegative("Harga satuan tidak boleh negatif"),
+      })).min(1, "Minimal harus ada satu item yang ditambahkan"),
+    });
 }

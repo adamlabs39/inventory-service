@@ -3,9 +3,9 @@ import cors from "cors";
 import routes from "./routes/routes.js";
 import errorMiddleware from "./middlewares/error-middleware.js";
 import authorizationSdk from "@adameds/authorization-sdk";
-import {dbSeeder} from "./seeders/db-seeder.js";
 import MODELMERGE from "./models/model-synchronize.js";
 import efp from "express-fileupload";
+import defineAssociations from "./configurations/database-associations.js";
 
 const APPLICATION_PORT = process.env.APPLICATION_PORT || 8080;
 const APPLICATION_HOST = process.env.APPLICATION_HOST || 'localhost';
@@ -33,6 +33,7 @@ app.use(routes);
 app.use(errorMiddleware);
 app.listen(APPLICATION_PORT, APPLICATION_HOST, async () => {
     try {
+        defineAssociations();
         // for (const model of MODELMERGE) {
         //     await model.sync({alter: false, force: true});
         // }

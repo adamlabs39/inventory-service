@@ -29,4 +29,18 @@ export default class StockController {
             next(error);
         }
     }
+
+    static async increaseStock(req, res, next) {
+        try {
+            const payload = {
+                ...req.body,
+                faskes_uuid: req.author.faskesUuid,
+                petugas: req.author.username
+            };
+            const result = await StockService.increaseStock(payload);
+            res.status(200).json(successResponse("Stok berhasil ditambahkan", result));
+        } catch (error) {
+            next(error);
+        }
+    }
 }

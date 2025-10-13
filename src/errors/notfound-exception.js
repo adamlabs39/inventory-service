@@ -5,7 +5,7 @@ export default class NotfoundException extends Error {
     this.code = 404;
     this.errors = [
       {
-        type: "notfound",
+        type: "not found",
         message: message,
       }
     ];

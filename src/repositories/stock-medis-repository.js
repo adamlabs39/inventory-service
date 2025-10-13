@@ -180,6 +180,64 @@ export default class StockMedisRepository {
         }
     }
 
+    static async increaseQuantity(req, t) {
+        const existingStock = await StockMedisModel.findOne({
+            where: {
+                lokasi_stok_uuid: req.lokasi_stok_uuid,
+                exp_date: req.exp_date,
+            },
+            include: [{
+                model: ItemMedisJenisStokModel,
+                as: 'item_medis_jenis_stok',
+                required: true,
+                where: {
+                    item_medis_uuid: req.item_uuid,
+                    jenis_stok_uuid: req.jenis_stok_uuid,
+                }
+            }],
+            transaction: t,
+            lock: t.LOCK.UPDATE, 
+        })
+
+        if (existingStock) {
+            // Kasus 1: Batch yang cocok sudah ada, kita hanya perlu UPDATE sisa stoknya.
+            const previous_stock = existingStock.sisa_stok;
+            const new_stock = previous_stock + req.quantity_to_add;
+
+            await existingStock.update({
+                sisa_stok: new_stock
+            }, { transaction: t });
+
+            return { previous_stock, new_stock };
+        } else {
+            // Kasus 2: Tidak ada batch yang cocok, kita harus CREATE batch baru.
+            const itemJenisStok = await ItemMedisJenisStokModel.findOne({
+                where: {
+                    item_medis_uuid: req.item_uuid,
+                    jenis_stok_uuid: req.jenis_stok_uuid,
+                },
+                attributes: ['uuid'],
+                transaction: t,
+            });
+
+            if (!itemJenisStok) {
+                throw new BadRequestException(`Konfigurasi item dan jenis stok tidak ditemukan untuk item UUID: ${req.item_uuid}`);
+            }
+
+            const newStock = await StockMedisModel.create({
+                faskes_uuid: req.faskes_uuid, 
+                exp_date: req.exp_date,
+                stok: req.quantity_to_add,      
+                sisa_stok: req.quantity_to_add, 
+                item_medis_jenis_stok_uuid: itemJenisStok.uuid,
+                harga_satuan: req.harga_satuan,
+                lokasi_stok_uuid: req.lokasi_stok_uuid,
+            }, { transaction: t });
+
+            return { previous_stock: 0, new_stock: newStock.sisa_stok };
+        }
+    }
+
     static async bulkCreate(req, transaction) {
         return await StockMedisModel.bulkCreate(req, {
             transaction
