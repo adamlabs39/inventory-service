@@ -15,4 +15,9 @@ stockRoutes.post(
     StockController.reduceStock,
 )
 
+stockRoutes.post(
+    '/increase',
+    StockController.increaseStock,
+)
+
 export default stockRoutes;

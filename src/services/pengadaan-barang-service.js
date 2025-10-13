@@ -1,40 +1,40 @@
 import sequelizeInstance from "../configurations/sequelize-instance.js";
 import BadRequestException from "../errors/bad-request-exception.js";
-import NotfoundException from "../errors/notfound-exception.js";
 import Utils from "../helpers/utils.js";
-import DatamasterSupplierRepository from "../repositories/datamaster-supplier-repository.js";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
+import SettingRepository from "../repositories/setting-repository.js";
 import PengadaanValidation from "../validations/pengadaan-validation.js";
 
 export default class PengadaanBarangService {
   static async create(payload) {
     const validatedData = await PengadaanValidation.CREATE_PEMBELIAN_BARANG.parseAsync(payload);
-    const supplier = await DatamasterSupplierRepository.getByUuid({
-      uuid: validatedData.supplier_uuid,
-      faskes_uuid: validatedData.faskes_uuid
-    });
-
-    if (!supplier) {
-      throw new BadRequestException(`Supplier tidak ditemukan.`);
-    }
 
     const transaction = await sequelizeInstance.transaction();
     try {
+      let ppnRate = 0;
+
+      if (validatedData.ppn === true) {
+        ppnRate = await SettingRepository.getCurrentPpnRate();
+      }
 
       const subTotal = validatedData.items.reduce(
             (acc, item) => acc + (item.qty_order * item.harga_satuan), 0 
-        );
+          );
 
-      const totalPpn = subTotal * (validatedData.ppn / 100);
-      const grandTotal = subTotal + totalPpn - (validatedData.diskon ?? 0) + (validatedData.materai ?? 0);
+      const dasarPengenaanPajak = subTotal - (validatedData.diskon ?? 0);
+      const totalPpn = dasarPengenaanPajak * (ppnRate / 100);
+      const grandTotal = dasarPengenaanPajak + totalPpn + (validatedData.materai ?? 0);
 
       const dataPembelianBarang = {
         ...validatedData,
         no_po: Utils.generate4Code("PO"),
         total_item: validatedData.items.length,
         grand_total: grandTotal,
+        ppn: ppnRate,
         status: "pending",
+        isCito: validatedData.is_cito,
       };
+      delete dataPembelianBarang.is_cito;
       const po = await InventoryBarangRepository.createPembelianBarang(dataPembelianBarang, transaction,)
 
       if (validatedData.items && validatedData.items.length > 0) {
@@ -59,22 +59,30 @@ export default class PengadaanBarangService {
   }
 
   static async getAll(options) {
-    const validatedOptions = await PengadaanValidation.GET_ALL_PEMBELIAN_BARANG.parseAsync(options);
-    const finalOptions = {
-      ...validatedOptions,
-      page: validatedOptions.page || 1,
-      limit: validatedOptions.limit || 10,
-    }
-    return await InventoryBarangRepository.getAll(finalOptions);
+    const validatedData = await PengadaanValidation.GET_ALL_PEMBELIAN_BARANG.parseAsync(options);
+    const result = await InventoryBarangRepository.getAll(validatedData);
+
+    result.data = result.data.map((pembelian) => {
+      return {
+          uuid: pembelian.uuid,
+          no_po: pembelian.no_po,
+          status: pembelian.status,
+          jenis_item: pembelian.jenis_item,
+          kategori_item: pembelian.kategori_item,
+          tanggal_pembelian: pembelian.tanggal_pembelian,
+          petugas_pembuat_po: pembelian.petugas_pembuat_po,
+          petugas_penerima: pembelian.petugas_penerima,
+          supplier: pembelian.spplr?.name, 
+          jenis_stok: pembelian.jenis_stok?.name 
+      };
+    });
+
+    return result;
   }
 
   static async getDetail(payload) {
     const validatedPayload = await PengadaanValidation.GET_PEMBELIAN_BARANG_BY_UUID.parseAsync(payload);
     const result = await InventoryBarangRepository.getDetail(validatedPayload);
-
-    if (!result) {
-      throw new NotfoundException("Data tidak ditemukan");
-    }
 
     return {
       uuid: result.uuid,
@@ -129,11 +137,14 @@ export default class PengadaanBarangService {
         uuid: validatedPayload.uuid,
         faskes_uuid: validatedPayload.faskes_uuid,
     });
-    if (!purchaseOrder) {
-        throw new NotfoundException("Data Pengadaan Barang yang akan dibatalkan tidak ditemukan");
-    }
+
     if (purchaseOrder.status !== 'pending') {
-        throw new BadRequestException(`Tidak dapat membatalkan PO dengan status "${purchaseOrder.status}"`);
+      throw new BadRequestException([
+        {
+          field: "status",
+          message: `Hanya PO dengan status pending yang dapat diubah. Status saat ini: ${purchaseOrder.status}`
+        }
+      ])
     }
     return await InventoryBarangRepository.update(validatedPayload);
   }
@@ -146,17 +157,49 @@ export default class PengadaanBarangService {
       faskes_uuid: validatedData.faskes_uuid,
     });
 
-    if (!purchaseOrder) {
-      throw new NotfoundException("Data Pengadaan Barang yang akan diubah tidak ditemukan");
-    }
-
     if (purchaseOrder.status !== 'pending') {
-      throw new BadRequestException(`Hanya PO dengan status pending yang dapat diubah. Status saat ini: ${purchaseOrder.status}`);
+      throw new BadRequestException([
+        {
+          field: "status",
+          message: `Hanya PO dengan status pending yang dapat diubah. Status saat ini: ${purchaseOrder.status}`
+        }
+      ])
     }
 
     const transaction = await sequelizeInstance.transaction();
     try {
-      await InventoryBarangRepository.updatePurchaseOrder(validatedData, transaction);
+      let ppnRate = 0;
+      
+      if (validatedData.ppn === true) {
+        ppnRate = await SettingRepository.getCurrentPpnRate(); 
+      }
+
+      const subTotal = validatedData.items.reduce(
+        (acc, item) => acc + (item.qty_order * item.harga_satuan), 0
+      );
+
+      const dasarPengenaanPajak = subTotal - (validatedData.diskon ?? 0);
+      const totalPpn = dasarPengenaanPajak * (ppnRate / 100);
+      const grandTotal = dasarPengenaanPajak + totalPpn + (validatedData.materai ?? 0);
+
+      const dataToUpdate = {
+        uuid: validatedData.uuid,
+        faskes_uuid: validatedData.faskes_uuid,
+        jenis_stok_uuid: validatedData.jenis_stok_uuid,
+        supplier_uuid: validatedData.supplier_uuid,
+        tanggal_pembelian: validatedData.tanggal_pembelian,
+        metode_pembelian: validatedData.metode_pembelian,
+        catatan_po: validatedData.catatan_po,
+        isCito: validatedData.is_cito,
+        total_item: validatedData.items.length,
+        diskon: validatedData.diskon,
+        materai: validatedData.materai,
+        ppn: ppnRate,
+        grand_total: grandTotal,
+      };
+
+      await InventoryBarangRepository.updatePurchaseOrder(dataToUpdate, transaction);
+
       if (validatedData.items) {
         await InventoryBarangRepository.deletePurchaseOrder(validatedData.uuid, transaction);
         if (validatedData.items.length > 0) {

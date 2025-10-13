@@ -12,40 +12,6 @@ import {
     MasterSupplierKategoriItemModel,
 } from "@adameds/model-sdk/inventory";
 
-MasterSupplierModel.belongsTo(ProvinceModel, {
-    foreignKey: "provinsi_code",
-    targetKey: "code",
-    as: "province",
-    constraints: false,
-});
-
-MasterSupplierModel.belongsTo(KabupatenModel, {
-    foreignKey: "kabupaten_code",
-    targetKey: "code",
-    as: "kabupaten",
-    constraints: false,
-});
-
-MasterSupplierModel.belongsTo(KecamatanModel, {
-    foreignKey: "kecamatan_code",
-    targetKey: "code",
-    as: "kecamatan",
-    constraints: false,
-});
-
-MasterSupplierModel.belongsTo(KelurahanModel, {
-    foreignKey: "kelurahan_code",
-    targetKey: "code",
-    as: "kelurahan",
-    constraints: false,
-});
-
-MasterSupplierModel.hasMany(MasterSupplierKategoriItemModel, {
-    foreignKey: "supllier_uuid",
-    as: "supplier_items",
-    constraints: false,
-});
-
 const supplierDetailIncludes = [
     { model: ProvinceModel, as: "province", required: false, attributes: ["code", "name"] },
     { model: KabupatenModel, as: "kabupaten", required: false, attributes: ["code", "name"] },

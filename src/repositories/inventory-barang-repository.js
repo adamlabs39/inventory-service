@@ -1,5 +1,5 @@
 import Pagination from "../helpers/pagination.js";
-import {Op} from "sequelize";
+import {Op, where} from "sequelize";
 import {toEpochDate} from "../helpers/date-helper.js";
 import {
     PembelianBarangSupplierModel,
@@ -8,40 +8,11 @@ import {
     StockMedisModel,
 } from "@adameds/model-sdk/inventory";
 import {ConversionModel, ItemMedisModel, JenisStokModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
+import sequelizeInstance from "../configurations/sequelize-instance.js";
 
-PembelianBarangSupplierModel.hasMany(PembelianBarangSupplierItemModel, {
-    foreignKey: "pembelian_barang_supplier_uuid",
-    as: "pbsu",
-    constraints: false,
-});
-PembelianBarangSupplierModel.belongsTo(MasterSupplierModel, {
-    foreignKey: "supplier_uuid",
-    as: "spplr",
-    constraints: false,
-});
-
-PembelianBarangSupplierItemModel.belongsTo(ConversionModel, {
-    foreignKey: "konversi_uuid",
-    as: "cnvrsn",
-    constraints: false,
-});
-
-PembelianBarangSupplierModel.belongsTo(LokasiStokModel, {
-    foreignKey: "lokasi_stok_uuid",
-    as: "lks",
-    constraints: false,
-});
-
-PembelianBarangSupplierModel.belongsTo(JenisStokModel, {
-    foreignKey: "jenis_stok_uuid",
-    as: "jenis_stok",
-    constraints: false,
-})
-
-PembelianBarangSupplierItemModel.belongsTo(ItemMedisModel, {
-    foreignKey: "item_uuid",
-    as: "item_medis",
-    constraints: false,
+sequelizeInstance.sync({
+    alter: true,
+    logging: console.log,
 });
 
 export default class InventoryBarangRepository {
@@ -103,29 +74,19 @@ export default class InventoryBarangRepository {
     }
 
     static async getAll(req) {
-        const option = {
-            where: {
+            const whereClause = {
                 faskes_uuid: req.faskes_uuid,
-                no_po: {[Op.iLike]: `%${req.no_po || ""}%`},
                 status: req.filter,
                 deleted_at: {
                     [Op.is]: null,
                 },
-            },
-            attributes: {
-                exclude: [
-                    "deleted_at",
-                    "created_at",
-                    "updated_at",
-                    "faskes_uuid",
-                    "no_surat_jalan",
-                ],
-            },
-            include: [
+            };
+
+            const includeOptions = [
                 {
                     model: MasterSupplierModel,
                     as: "spplr",
-                    required: false,
+                    required: true,
                     attributes: ["name"]
                 },
                 {
@@ -134,8 +95,26 @@ export default class InventoryBarangRepository {
                     required: false,
                     attributes: ["name"]
                 }
-            ],
-        };
+            ];
+
+            if (req.search) {
+                whereClause[Op.or] = [
+                    { no_po: { [Op.iLike]: `%${req.search}%` } },
+                    { '$spplr.name$': { [Op.iLike]: `%${req.search}%` } }
+                ];
+            }
+
+            const option = {
+                where: whereClause,
+                attributes: {
+                    exclude: [
+                        "deleted_at", "created_at", "updated_at",
+                        "faskes_uuid", "no_surat_jalan",
+                    ],
+                },
+                include: includeOptions,
+                subQuery: false,
+            };
 
         return Pagination.init(PembelianBarangSupplierModel, req, option);
     }
@@ -324,23 +303,37 @@ export default class InventoryBarangRepository {
                 faskes_uuid: req.faskes_uuid,
                 is_return: null,
             },
-            include: {
-                model: MasterSupplierModel,
-                as: 'spplr',
-                required: true,
-                attributes: ['name']
-            }
+            attributes: [
+                'uuid',
+                'no_faktur',
+                'tanggal_faktur',
+                ['no_po', 'no_penerimaan'],
+                'tanggal_penerimaan',
+                [sequelizeInstance.col('spplr.name'), 'supplier']
+            ],
+            include: [
+                {
+                    model: MasterSupplierModel,
+                    as: 'spplr',
+                    required: true,
+                    attributes: []
+                }
+            ],
+            nest: true,
         };
 
         if (req.search) {
             option.where.no_faktur = {[Op.iLike]: `%${req.search || ""}%`};
         }
 
-        if (req.start_date && req.end_date) {
-            option.where.tanggal_faktur = {
-                [Op.gte]: toEpochDate(req.start_date),
-                [Op.lte]: toEpochDate(req.end_date),
-            }
+        if (req.date) {
+            const [ day, month, year ] = req.date.split('-').map(Number);
+            const startOfDay = new Date(year, month - 1, day, 0, 0, 0);
+            const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+            option.where.tanggal_penerimaan = {
+                [Op.between]: [toEpochDate(startOfDay), toEpochDate(endOfDay)]
+            };
         }
 
         return await Pagination.init(PembelianBarangSupplierModel, req, option);

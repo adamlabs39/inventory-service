@@ -1,13 +1,11 @@
 export default class BadRequestException extends Error {
-    constructor(message) {
-      super(message);
-      this.message = message;
-      this.status = 400;
-      this.errors = [
-        {
-          type: "Bad Request",
-          message: message,
-        }
-      ];
+  constructor(errors) {
+    super("Bad Request");
+    this.status = 400;
+    if (typeof errors === 'string') {
+      this.errors = [{ message: errors }];
+    } else {
+      this.errors = errors;
     }
   }
+}

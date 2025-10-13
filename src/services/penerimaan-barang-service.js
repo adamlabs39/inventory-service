@@ -1,4 +1,5 @@
 import sequelizeInstance from "../configurations/sequelize-instance.js";
+import BadRequestException from "../errors/bad-request-exception.js";
 import InternalServerException from "../errors/internal-server-exception.js";
 import NotfoundException from "../errors/notfound-exception.js";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
@@ -15,7 +16,12 @@ export default class PenerimaanBarangService {
         }
         
         if (purchaseOrder.status !== 'verifikasi') {
-            throw new BadRequestException(`Hanya PO dengan status verifikasi yang dapat diterima. Status saat ini: ${purchaseOrder.status}`);
+            throw new BadRequestException([
+                {
+                    field: "status",
+                    message: `Hanya PO dengan status verifikasi yang dapat diterima. Status saat ini: ${purchaseOrder.status}`
+                }
+            ])
         }
 
         const transaction = await sequelizeInstance.transaction();

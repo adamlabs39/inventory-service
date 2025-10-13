@@ -203,31 +203,8 @@ export default class ReturSupplierService {
         }
     }
 
-    static async getAvailableFaktur(pa) {
-        if (pa.date) {
-            const [day, month, year] = pa.date.split('-').map(Number);
-
-            const start = new Date(year, month - 1, day, 0, 0, 0);
-            const end = new Date(year, month - 1, day, 23, 59, 59, 999);
-
-            pa.start_date = toEpochDate(start);
-            pa.end_date = toEpochDate(end);
-        }
-
-        const result = await InventoryBarangRepository.getForRetur(pa);
-
-        result.data = result.data.map((item) => {
-            return {
-                uuid: item.uuid,
-                no_faktur: item.no_faktur,
-                tanggal_faktur: item.tanggal_faktur,
-                no_penerimaan: item.no_po,
-                tanggal_penerimaan: item.tanggal_penerimaan,
-                supplier: item.spplr?.name || "Nama Supplier Tidak Tersedia",
-            }
-        })
-
-        return result;
+    static async getAvailableFaktur(payload) {
+        return await InventoryBarangRepository.getForRetur(payload);
     }
 
     static async getFakturDetail(req) {

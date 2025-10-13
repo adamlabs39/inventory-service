@@ -86,4 +86,54 @@ export default class StockService {
             throw error;
         }
     }
+
+    static async increaseStock(req) {
+        const validatedData = StockValidation.INCREASE_STOCK.parse(req);
+        const transaction = await sequelizeInstance.transaction();
+
+        try {
+            for (const item of validatedData.items) {
+                const payloadForRepo = {
+                    item_uuid: item.item_uuid,
+                    quantity_to_add: item.quantity,
+                    lokasi_stok_uuid: item.lokasi_stok_uuid,
+                    jenis_stok_uuid: item.jenis_stok_uuid,
+                    exp_date: item.exp_date,
+                    harga_satuan: item.harga_satuan,
+                    faskes_uuid: validatedData.faskes_uuid,
+                };
+                
+                const { previous_stock } = await StockMedisRepository.increaseQuantity(payloadForRepo, transaction);
+
+                const mutasiItem = {
+                    item_uuid: item.item_uuid,
+                    exp_date: item.exp_date,
+                    stok_awal: previous_stock,
+                    stok_mutasi: item.quantity,
+                    jenis_stok_uuid: item.jenis_stok_uuid,
+                    lokasi_stok_uuid: item.lokasi_stok_uuid,
+                    type: "surplus"
+                };
+
+                await RiwayatMutasiService.create({
+                    faskes_uuid: validatedData.faskes_uuid,
+                    sumber_mutasi: validatedData.sumber_mutasi,
+                    code: validatedData.kode_referensi,
+                    petugas: validatedData.petugas,
+                    keterangan: { 
+                        description: `Penambahan stok dari ${validatedData.sumber_mutasi} no: ${validatedData.kode_referensi}` 
+                    },
+                    items: [mutasiItem] 
+                }, { transaction });
+            }
+
+            await transaction.commit();
+
+            return { message: "Stok berhasil ditambahkan." };
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+    }
 }
