@@ -15,7 +15,7 @@ export default class PenerimaanValidation {
         catatan_penerimaan: z.string().optional(),
         diskon: z.number().optional(),
         materai: z.number().optional(),
-        ppn: z.number().optional(),
+        ppn: z.boolean().optional(),
         items: z.array(z.object({
             uuid: z.string().uuid("UUID item pembelian tidak valid"),
             qty_terima: z.number().nonnegative("Jumlah diterima tidak boleh negatif"),

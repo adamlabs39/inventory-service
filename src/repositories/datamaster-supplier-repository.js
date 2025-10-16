@@ -46,7 +46,7 @@ export default class DatamasterSupplierRepository {
         const whereClause = {
             faskes_uuid: options.faskes_uuid,
             deleted_at: { [Op.is]: null },
-        }
+        };
 
         if (options.name) {
             whereClause.name = { [Op.iLike]: `%${options.name}%` };
@@ -64,7 +64,8 @@ export default class DatamasterSupplierRepository {
         const whereClause = {
             faskes_uuid: options.faskes_uuid,
             status: true,
-        }
+            deleted_at: { [Op.is]: null }
+        };
 
         if (options.name) {
             whereClause.name = { [Op.iLike]: `%${options.name}%` };

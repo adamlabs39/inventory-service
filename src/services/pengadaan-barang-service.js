@@ -186,6 +186,23 @@ export default class PengadaanBarangService {
       ]);
     }
 
+    const itemUuidsFromPayload = [...new Set(validatedData.items.map(item => item.item_uuid))];
+
+    const validItemsCount = await ItemMedisJenisStokRepository.countValidItemsForJenisStok(
+      itemUuidsFromPayload,
+      validatedData.jenis_stok_uuid,
+      validatedData.faskes_uuid
+    );
+
+    if (validItemsCount !== itemUuidsFromPayload.length) {
+      throw new BadRequestException([
+        {
+          field: "items",
+          message: "Terdapat satu atau lebih item yang tidak sesuai dengan Jenis Stok yang dipilih. Harap periksa kembali."
+        }
+      ]);
+    }
+
     const transaction = await sequelizeInstance.transaction();
     try {
       let ppnRate = 0;

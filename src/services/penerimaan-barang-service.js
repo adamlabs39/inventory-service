@@ -4,6 +4,7 @@ import InternalServerException from "../errors/internal-server-exception.js";
 import NotfoundException from "../errors/notfound-exception.js";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
+import SettingRepository from "../repositories/setting-repository.js";
 import PenerimaanValidation from "../validations/penerimaan-validation.js";
 
 export default class PenerimaanBarangService {
@@ -24,9 +25,31 @@ export default class PenerimaanBarangService {
             ]);
         }
 
+        let ppnRate = 0;
+        if (validatedData.ppn === true) {
+            ppnRate =  await SettingRepository.getCurrentPpnRate();
+        }
+
+        const dataToUpdateHeader = {
+            uuid: validatedData.uuid,
+            faskes_uuid: validatedData.faskes_uuid,
+            status: "diterima", 
+            tanggal_penerimaan: validatedData.tanggal_terima,
+            no_faktur: validatedData.no_faktur,
+            tanggal_faktur: validatedData.tanggal_faktur,
+            no_surat_jalan: validatedData.no_surat_jalan,
+            catatan_penerimaan: validatedData.catatan_penerimaan,
+            petugas_pengirim: validatedData.petugas_pengirim,
+            petugas_penerima: validatedData.petugas_penerima,
+            petugas_penerima_uuid: validatedData.petugas_penerima_uuid,
+            diskon: validatedData.diskon,
+            materai: validatedData.materai,
+            ppn: ppnRate,
+        };
+
         const transaction = await sequelizeInstance.transaction();
         try {
-            await InventoryBarangRepository.updateStatusToDiterima(validatedData, transaction);
+            await InventoryBarangRepository.updateStatusToDiterima(dataToUpdateHeader, transaction);
             if (validatedData.items && validatedData.items.length > 0) {
                 for (const item of validatedData.items) {
                     await InventoryBarangRepository.updatePurchaseOrderItems({
@@ -82,7 +105,7 @@ export default class PenerimaanBarangService {
             // TODO : CREATE DATA IN HARGA ITEM TABLE
         } catch (e) {
             await transaction.rollback();
-            throw new InternalServerException(e.message);
+            throw e;
         }
     }
 }

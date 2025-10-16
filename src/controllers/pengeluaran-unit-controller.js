@@ -30,7 +30,7 @@ export default class PengeluaranUnitController {
       const options = {
         ...req.query,
         faskes_uuid: req.author.faskesUuid,
-      }
+      };
       const result = await PengeluaranUnitService.getAll(options);
       res.status(200).json(successResponse("Data berhasil ditampilkan", result));
     } catch (error) {

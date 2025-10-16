@@ -15,15 +15,15 @@ export default class ReturSupplierRepository {
             where: {
                 deleted_at: null,
                 [Op.or]: [
-                    {no_retur_supplier: {[Op.iLike]: `%${req.search || ''}%`}},
+                    {no_retur_supplier: {[Op.iLike]: `%${req.search || ""}%`}},
                     sequelizeInstance.where(
-                        sequelizeInstance.col('spplr.name'),
-                        {[Op.iLike]: `%${req.search || ''}%`}
+                        sequelizeInstance.col("spplr.name"),
+                        {[Op.iLike]: `%${req.search || ""}%`}
                     )
                 ],
                 faskes_uuid: req.faskes_uuid,
                 lokasi_stok_uuid: {
-                    [Op.iLike]: `%${req.lokasi_stok_uuid || ''}%`
+                    [Op.iLike]: `%${req.lokasi_stok_uuid || ""}%`
                 },
                 status: req.status,
             },
@@ -112,22 +112,22 @@ export default class ReturSupplierRepository {
                     include: [
                         {
                             model: ConversionModel,
-                            as: 'konversi',
+                            as: "konversi",
                             required: false,
                             attributes: {
-                                exclude: ['deleted_at', 'created_at', 'updated_at', 'faskes_uuid']
+                                exclude: ["deleted_at", "created_at", "updated_at", "faskes_uuid"]
                             }
                         },
                         {
                             model: ItemMedisModel,
-                            as: 'item_medis',
+                            as: "item_medis",
                             required: false,
-                            attributes: ['name', 'uuid'],
+                            attributes: ["name", "uuid"],
                         }
                     ]
                 }
             ],
-        })
+        });
     }
 
     static async create(req, transaction) {
@@ -147,7 +147,7 @@ export default class ReturSupplierRepository {
                 },
                 transaction
             }
-        )
+        );
 
         if (affectedRow === 0) {
             throw new Error("Data dengan id ini tidak ditemukan");
