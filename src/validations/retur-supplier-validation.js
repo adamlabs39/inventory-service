@@ -6,7 +6,7 @@ export default class ReturSupplierValidation {
         faskes_uuid: z.string().min(1, faskesUuidRequired),
         search: z.string().optional(),
         status: z.enum(["retur", "terima"]),
-    })
+    });
 
     static GET_DETAIL = z.object({
         uuid: z.string().min(1, required),
@@ -30,7 +30,7 @@ export default class ReturSupplierValidation {
             harga_satuan: z.number().min(1, required),
             exp_date: z.string().optional(),
         })).optional()
-    })
+    });
 
     static ACCEPT_REPLACEMENT = z.object({
         type: z.enum(["barang", "uang"], {
@@ -49,7 +49,7 @@ export default class ReturSupplierValidation {
         harga: z.number({ invalid_type_error: "harga harus berupa angka." }).optional(),
 
     }).superRefine((data, ctx) => {
-        if (data.type === 'barang') {
+        if (data.type === "barang") {
             if (!data.items || data.items.length === 0) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -57,7 +57,7 @@ export default class ReturSupplierValidation {
                     message: "Jika type adalah 'barang', field 'items' wajib diisi dan tidak boleh kosong.",
                 });
             }
-        } else if (data.type === 'uang') {
+        } else if (data.type === "uang") {
             if (data.harga === undefined || data.harga === null) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,

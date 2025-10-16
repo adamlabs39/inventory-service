@@ -16,15 +16,25 @@ export default class PengeluaranUnitRepository {
     }
 
     static async getAll(req) {
+        const whereClause = {
+            deleted_at: null,
+            faskes_uuid: req.faskes_uuid,
+        };
+
+        if (req.lokasi_stok_uuid) {
+            whereClause.lokasi_stok_awal_uuid = req.lokasi_stok_uuid;
+        }
+
+        if (req.search) {
+            whereClause.no_pengeluaran = { [Op.iLike]: `%${req.search || ''}%` };
+        }
+        
+        if (req.jenis_pengeluaran) {
+            whereClause.jenis_pengeluaran = req.jenis_pengeluaran;
+        }
+        
         const option = {
-            where: {
-                deleted_at: null,
-                faskes_uuid: req.faskes_uuid,
-                lokasi_stok_awal_uuid: req.lokasi_stok_uuid,
-                no_pengeluaran: {
-                    [Op.iLike]: `%${req.search || ''}%`
-                },
-            },
+            where: whereClause,
             order: [["tanggal_pengeluaran", "DESC"]],
             attributes: {
                 exclude: ['deleted_at', 'created_at', 'updated_at', 'id']

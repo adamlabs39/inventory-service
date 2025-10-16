@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export default class StockValidation {
     static GET_STOCK = z.object({
@@ -30,8 +30,11 @@ export default class StockValidation {
         lokasi_stok_uuid: z.string().uuid("Lokasi stok UUID tidak valid"),
         jenis_stok_uuid: z.string().uuid("Jenis stok UUID tidak valid"),
         quantity: z.number().int().positive("Kuantitas harus berupa angka positif"),
-        exp_date: z.string().datetime("Format tanggal kedaluwarsa tidak valid"),
-        harga_satuan: z.number().nonnegative("Harga satuan tidak boleh negatif"),
+        exp_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD")
+          .refine((dateStr) => {
+            return !isNaN(new Date(dateStr).getTime());
+          }, "Tanggal tidak valid"),
+        harga_satuan: z.number().positive("Harga satuan harus berupa angka positif"),
       })).min(1, "Minimal harus ada satu item yang ditambahkan"),
     });
 }

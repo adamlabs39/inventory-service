@@ -12,7 +12,7 @@ export default class VerifikasiBarangService {
       throw new NotfoundException("Data Pengadaan Barang yang akan diverifikasi tidak ditemukan");
     }
 
-    if (purchaseOrder.status !== 'pending') {
+    if (purchaseOrder.status !== "pending") {
       throw new BadRequestException(`Tidak dapat memverifikasi PO dengan status "${purchaseOrder.status}"`);
     }
 

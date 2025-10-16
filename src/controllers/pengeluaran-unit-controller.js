@@ -27,13 +27,12 @@ export default class PengeluaranUnitController {
 
   static async getAll(req, res, nextFunction) {
     try {
-      req.query.faskes_uuid = req.author.faskesUuid;
-      const data = await PengeluaranUnitService.getAll(req.query);
-      res
-        .status(201)
-        .json(
-          successResponse("data berhasil didapat", data.data, data.pagination)
-        );
+      const options = {
+        ...req.query,
+        faskes_uuid: req.author.faskesUuid,
+      }
+      const result = await PengeluaranUnitService.getAll(options);
+      res.status(200).json(successResponse("Data berhasil ditampilkan", result));
     } catch (error) {
       nextFunction(error);
     }

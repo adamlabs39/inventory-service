@@ -169,4 +169,14 @@ export default class ItemMedisJenisStokRepository {
       attributes: ["uuid", "jenis_stok_uuid", "item_medis_uuid"],
     });
   }
+  
+  static async countValidItemsForJenisStok(itemUuids, jenisStokUuid, faskesUuid) {
+        return await ItemMedisJenisStokModel.count({
+          where: {
+            item_medis_uuid: { [Op.in]: itemUuids },
+            jenis_stok_uuid: jenisStokUuid,
+            faskes_uuid: faskesUuid
+          }
+    });
+  }
 }

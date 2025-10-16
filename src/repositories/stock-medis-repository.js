@@ -39,17 +39,17 @@ export default class StockMedisRepository {
                     },
                     lokasi_stok_uuid: req.lokasi_stok_uuid,
                 },
-                attributes: ['sisa_stok'],
+                attributes: ["sisa_stok"],
                 include: [
                     {
                         model: ItemMedisJenisStokModel,
-                        as: 'item_medis_jenis_stok',
+                        as: "item_medis_jenis_stok",
                         required: true,
                         where: {
                             jenis_stok_uuid: req.jenis_stok_uuid,
                             item_medis_uuid: req.item_medis_uuid,
                         },
-                        attributes: ['uuid'],
+                        attributes: ["uuid"],
                     }
                 ],
                 transaction: t,
@@ -75,13 +75,13 @@ export default class StockMedisRepository {
                     include: [
                         {
                             model: ItemMedisJenisStokModel,
-                            as: 'item_medis_jenis_stok',
+                            as: "item_medis_jenis_stok",
                             required: true,
                             where: {
                                 item_medis_uuid: req.item_medis_uuid,
                                 jenis_stok_uuid: req.jenis_stok_uuid,
                             },
-                            attributes: ['uuid'],
+                            attributes: ["uuid"],
                         }
                     ],
                     order: order,
@@ -144,9 +144,9 @@ export default class StockMedisRepository {
                         include: [
                             {
                                 model: ItemMedisModel,
-                                as: 'item_medis',
+                                as: "item_medis",
                                 required: true,
-                                attributes: ['name'],
+                                attributes: ["name"],
                             }
                         ],
                     }
@@ -181,14 +181,21 @@ export default class StockMedisRepository {
     }
 
     static async increaseQuantity(req, t) {
+        const startDate = new Date(req.exp_date);
+        startDate.setUTCHours(0, 0, 0, 0);
+        const endDate = new Date(req.exp_date);
+        endDate.setUTCHours(23, 59, 59, 999);
         const existingStock = await StockMedisModel.findOne({
             where: {
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
-                exp_date: req.exp_date,
+                exp_date: {
+                    [Op.between]: [startDate, endDate]
+                },
+                harga_satuan: req.harga_satuan
             },
             include: [{
                 model: ItemMedisJenisStokModel,
-                as: 'item_medis_jenis_stok',
+                as: "item_medis_jenis_stok",
                 required: true,
                 where: {
                     item_medis_uuid: req.item_uuid,
@@ -197,45 +204,15 @@ export default class StockMedisRepository {
             }],
             transaction: t,
             lock: t.LOCK.UPDATE, 
-        })
-
+        });
         if (existingStock) {
-            // Kasus 1: Batch yang cocok sudah ada, kita hanya perlu UPDATE sisa stoknya.
             const previous_stock = existingStock.sisa_stok;
             const new_stock = previous_stock + req.quantity_to_add;
+            await existingStock.update({ sisa_stok: new_stock }, { transaction: t });
+            return { existingStock, previous_stock, new_stock };
+        } 
 
-            await existingStock.update({
-                sisa_stok: new_stock
-            }, { transaction: t });
-
-            return { previous_stock, new_stock };
-        } else {
-            // Kasus 2: Tidak ada batch yang cocok, kita harus CREATE batch baru.
-            const itemJenisStok = await ItemMedisJenisStokModel.findOne({
-                where: {
-                    item_medis_uuid: req.item_uuid,
-                    jenis_stok_uuid: req.jenis_stok_uuid,
-                },
-                attributes: ['uuid'],
-                transaction: t,
-            });
-
-            if (!itemJenisStok) {
-                throw new BadRequestException(`Konfigurasi item dan jenis stok tidak ditemukan untuk item UUID: ${req.item_uuid}`);
-            }
-
-            const newStock = await StockMedisModel.create({
-                faskes_uuid: req.faskes_uuid, 
-                exp_date: req.exp_date,
-                stok: req.quantity_to_add,      
-                sisa_stok: req.quantity_to_add, 
-                item_medis_jenis_stok_uuid: itemJenisStok.uuid,
-                harga_satuan: req.harga_satuan,
-                lokasi_stok_uuid: req.lokasi_stok_uuid,
-            }, { transaction: t });
-
-            return { previous_stock: 0, new_stock: newStock.sisa_stok };
-        }
+        return { existingStock: null, previous_stock: null, new_stock: null };
     }
 
     static async bulkCreate(req, transaction) {
@@ -280,24 +257,24 @@ export default class StockMedisRepository {
             include: [
                 {
                     model: ItemMedisJenisStokModel,
-                    as: 'item_medis_jenis_stok',
+                    as: "item_medis_jenis_stok",
                     required: true,
-                    attributes: ['uuid'],
+                    attributes: ["uuid"],
                     include: [
                         {
                             model: JenisStokModel,
-                            as: 'detail_stok',
+                            as: "detail_stok",
                             required: true,
-                            attributes: ['name'],
+                            attributes: ["name"],
                             where: {
                                 uuid: req.jenis_stok_uuid
                             }
                         },
                         {
                             model: ItemMedisModel,
-                            as: 'item_medis',
+                            as: "item_medis",
                             required: true,
-                            attributes: ['name', 'uuid'],
+                            attributes: ["name", "uuid"],
                         }
                     ],
                 }
@@ -332,7 +309,7 @@ export default class StockMedisRepository {
                 uuid: req.uuid
             },
             transaction
-        })
+        });
 
         const allRelatedStock = await StockMedisModel.findAll({
             where: {
@@ -342,7 +319,7 @@ export default class StockMedisRepository {
                 lokasi_stok_uuid: stock.lokasi_stok_uuid,
 
             }
-        })
+        });
 
         let remainingQuantity = req.qty;
         let iteration = 0;
@@ -372,7 +349,7 @@ export default class StockMedisRepository {
                     uuid: stockItem.uuid
                 },
                 transaction
-            })
+            });
 
             iteration++;
         }
@@ -389,7 +366,7 @@ export default class StockMedisRepository {
                     uuid: allRelatedStock[i].uuid
                 },
                 transaction
-            })
+            });
         }
     }
 
@@ -401,16 +378,16 @@ export default class StockMedisRepository {
             include: [
                 {
                     model: ItemMedisJenisStokModel,
-                    as: 'item_medis_jenis_stok',
+                    as: "item_medis_jenis_stok",
                     required: true,
-                    attributes: ['uuid', 'item_medis_uuid', 'jenis_stok_uuid'],
+                    attributes: ["uuid", "item_medis_uuid", "jenis_stok_uuid"],
                     where: {
                         item_medis_uuid: req.item_uuids,
                         jenis_stok_uuid: req.jenis_stok_uuids
                     },
                 }
             ]
-        })
+        });
     }
 
     static async getDetail(req) {
@@ -421,34 +398,34 @@ export default class StockMedisRepository {
             include: [
                 {
                     model: ItemMedisJenisStokModel,
-                    as: 'item_medis_jenis_stok',
+                    as: "item_medis_jenis_stok",
                     required: true,
                     include: [
                         {
                             model: ItemMedisModel,
-                            as: 'item_medis',
+                            as: "item_medis",
                             required: false,
-                            attributes: ['code', 'jenis_item'],
+                            attributes: ["code", "jenis_item"],
                             include: [
                                 {
                                     model: SatuanModel,
-                                    as: 'satuan_penggunaan',
+                                    as: "satuan_penggunaan",
                                     required: false,
-                                    attributes: ['name']
+                                    attributes: ["name"]
                                 },
                                 {
                                     model: ManufactureModel,
-                                    as: 'manufacture',
+                                    as: "manufacture",
                                     required: false,
-                                    attributes: ['name']
+                                    attributes: ["name"]
                                 }
                             ]
                         },
                         {
                             model: JenisStokModel,
-                            as: 'detail_stok',
+                            as: "detail_stok",
                             required: false,
-                            attributes: ['name'],
+                            attributes: ["name"],
                         }
                     ]
                 }
@@ -474,30 +451,30 @@ export default class StockMedisRepository {
             include: [
                 {
                     model: ItemMedisModel,
-                    as: 'item_medis',
+                    as: "item_medis",
                     required: true,
-                    attributes: ['name', 'jenis_item'],
+                    attributes: ["name", "jenis_item"],
                     where: {
                         [Op.or]: [
                             {name: {[Op.iLike]: `%${req.search ?? ""}%`}},
                             {code: {[Op.iLike]: `%${req.search ?? ""}%`}},
                         ],
                         jenis_item: {
-                            [Op.in]: req.jenis_item ? [req.jenis_item] : ['obat', 'alkes'],
+                            [Op.in]: req.jenis_item ? [req.jenis_item] : ["obat", "alkes"],
                         }
                     }
                 },
                 {
                     model: JenisStokModel,
-                    as: 'detail_stok',
+                    as: "detail_stok",
                     required: false,
-                    attributes: ['name'],
+                    attributes: ["name"],
                 },
                 {
                     model: StockMedisModel,
-                    as: 'stocks',
+                    as: "stocks",
                     required: true,
-                    attributes: ['sisa_stok', 'uuid'],
+                    attributes: ["sisa_stok", "uuid"],
                     where: {
                         sisa_stok: {
                             [Op.gt]: 0
@@ -506,7 +483,7 @@ export default class StockMedisRepository {
                     include: [
                         {
                             model: ConversionModel,
-                            as: 'konversi',
+                            as: "konversi",
                             required: false,
                             attributes: {
                                 exclude: [
@@ -520,7 +497,7 @@ export default class StockMedisRepository {
                     ]
                 }
             ]
-        }
+        };
 
         return await Pagination.init(ItemMedisJenisStokModel, req, option);
     }
@@ -532,13 +509,13 @@ export default class StockMedisRepository {
             },
             attributes: ["exp_date", "harga_satuan", "created_at", "no_po"],
             order: [["created_at", "DESC"]],
-        })
+        });
     }
 
     static async findStockByItem(req) {
         const whereClause = {
             sisa_stok: { [Op.gt]: 0 }
-        }
+        };
 
         if (req.lokasi_stok_uuid) {
             whereClause.lokasi_stok_uuid = req.lokasi_stok_uuid;
@@ -546,28 +523,28 @@ export default class StockMedisRepository {
 
         return await StockMedisModel.findAll({
             attributes: [
-                [sequelizeInstance.fn('SUM', sequelizeInstance.col('sisa_stok')), 'jumlah_tersedia'],
-                [sequelizeInstance.fn('AVG', sequelizeInstance.col('harga_satuan')), 'harga_satuan'],
+                [sequelizeInstance.fn("SUM", sequelizeInstance.col("sisa_stok")), "jumlah_tersedia"],
+                [sequelizeInstance.fn("AVG", sequelizeInstance.col("harga_satuan")), "harga_satuan"],
             ],
             where: whereClause,
             group: [
-                'lokasi_stok.uuid',
-                'item_medis_jenis_stok.uuid',
-                'item_medis_jenis_stok->item_medis.uuid',
-                'item_medis_jenis_stok->item_medis->satuan_penggunaan.uuid',
-                'item_medis_jenis_stok->detail_stok.uuid',
+                "lokasi_stok.uuid",
+                "item_medis_jenis_stok.uuid",
+                "item_medis_jenis_stok->item_medis.uuid",
+                "item_medis_jenis_stok->item_medis->satuan_penggunaan.uuid",
+                "item_medis_jenis_stok->detail_stok.uuid",
             ],
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok',
-                    attributes: ['uuid', 'name'],
+                    as: "lokasi_stok",
+                    attributes: ["uuid", "name"],
                     required: true
                 },
                 {
                     model: ItemMedisJenisStokModel,
-                    as: 'item_medis_jenis_stok',
-                    attributes: ['uuid', 'item_medis_uuid'],
+                    as: "item_medis_jenis_stok",
+                    attributes: ["uuid", "item_medis_uuid"],
                     required: true,
                     where: {
                         item_medis_uuid: { [Op.in]: req.item_uuids }
@@ -575,20 +552,20 @@ export default class StockMedisRepository {
                     include: [
                         {
                             model: ItemMedisModel,
-                            as: 'item_medis',
-                            attributes: ['uuid', 'name'],
+                            as: "item_medis",
+                            attributes: ["uuid", "name"],
                             required: true,
                             include: [{
                                 model: SatuanModel,
-                                as: 'satuan_penggunaan', 
-                                attributes: ['uuid', 'name'],
+                                as: "satuan_penggunaan", 
+                                attributes: ["uuid", "name"],
                                 required: false 
                             }]
                         },
                         {
                             model: JenisStokModel,
-                            as: 'detail_stok',
-                            attributes: ['uuid', 'name'],
+                            as: "detail_stok",
+                            attributes: ["uuid", "name"],
                             required: true
                         }
                     ]

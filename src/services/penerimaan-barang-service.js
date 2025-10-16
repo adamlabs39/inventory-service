@@ -15,13 +15,13 @@ export default class PenerimaanBarangService {
             throw new NotfoundException("Data Pengadaan Barang yang akan diterima tidak ditemukan");
         }
         
-        if (purchaseOrder.status !== 'verifikasi') {
+        if (purchaseOrder.status !== "verifikasi") {
             throw new BadRequestException([
                 {
                     field: "status",
                     message: `Hanya PO dengan status verifikasi yang dapat diterima. Status saat ini: ${purchaseOrder.status}`
                 }
-            ])
+            ]);
         }
 
         const transaction = await sequelizeInstance.transaction();
@@ -44,29 +44,34 @@ export default class PenerimaanBarangService {
                 faskes_uuid: validatedData.faskes_uuid,
             });
 
-            const itemsToCreateStock = purchaseOrder.pbsu.map(itemPo => {
-                const itemFromBody = validatedData.items?.find(i => i.uuid === itemPo.uuid);
+            const itemsToCreateStock = validatedData.items
+                .filter(item => item.qty_terima > 0)
+                .map(itemDiterima => {
+                    const itemPoAsli = purchaseOrder.pbsu.find(i => i.uuid === itemDiterima.uuid);
+                    if (!itemPoAsli) {
+                        throw new BadRequestException(`Item dengan UUID ${itemDiterima.uuid} tidak ditemukan di dalam PO asli.`);
+                    }
 
-                const correspondingItem = itemMedisJenisStokList.find(
-                    ims => ims.item_medis_uuid === itemPo.item_uuid
-                );
+                    const correspondingItem = itemMedisJenisStokList.find(
+                        ims => ims.item_medis_uuid === itemPoAsli.item_uuid
+                    );
 
-                if (!correspondingItem) {
-                    throw new InternalServerException(`Data Item Medis Jenis Stok untuk item ${itemPo.item_uuid} tidak ditemukan.`);
-                }
+                    if (!correspondingItem) {
+                        throw new InternalServerException(`Konfigurasi jenis stok untuk item ${itemPoAsli.item_uuid} tidak ditemukan.`);
+                    }
 
-                return {
-                    exp_date: itemFromBody?.exp_date,
-                    stok: itemPo.qty_order,
-                    sisa_stok: itemPo.qty_order,
-                    konversi_uuid: itemPo.konversi_uuid,
-                    lokasi_stok_uuid: purchaseOrder.lokasi_stok_uuid,
-                    item_medis_jenis_stok_uuid: correspondingItem.uuid,
-                    harga_satuan: itemPo.harga_satuan,
-                    no_po: purchaseOrder.no_po,
-                    faskes_uuid: validatedData.faskes_uuid,
-                };
-            });
+                    return {
+                        exp_date: new Date(itemDiterima.exp_date),
+                        stok: itemDiterima.qty_terima,      
+                        sisa_stok: itemDiterima.qty_terima, 
+                        konversi_uuid: itemPoAsli.konversi_uuid, 
+                        lokasi_stok_uuid: purchaseOrder.lokasi_stok_uuid,
+                        item_medis_jenis_stok_uuid: correspondingItem.uuid,
+                        harga_satuan: itemPoAsli.harga_satuan, 
+                        no_po: purchaseOrder.no_po,
+                        faskes_uuid: validatedData.faskes_uuid,
+                    };
+                });
 
             await InventoryBarangRepository.bulkCreateStokMedis(itemsToCreateStock, transaction);
 

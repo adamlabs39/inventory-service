@@ -26,7 +26,7 @@ export default class AlkesService {
         const transaction = await sequelizeInstance.transaction();
 
         // generate no prescription
-        req.no_order_alkes = Utils.generate4Code('ORD');
+        req.no_order_alkes = Utils.generate4Code("ORD");
 
         // validate input
         ZodValidator.validate(AlkesValidation.ORDER_ALKES, req);
@@ -180,12 +180,12 @@ export default class AlkesService {
                     lokasi_stok_uuid: alkes.lokasi_stok_uuid,
                     metode_pemotongan_stok: konfigurasiHarga.metode_pemotongan_stok,
                     name: alkesIitem?.item_medis?.name ?? ""
-                }, transaction)
+                }, transaction);
 
                 const item = {
                     uuid: alkesIitem.uuid,
                     stok_medis_uuides: usedStock
-                }
+                };
 
                 await AlkesRepository.editAlkesItem(item, transaction);
             }
@@ -254,7 +254,7 @@ export default class AlkesService {
             order_masuk,
             sedang_disiapkan,
             penyerahan_alkes
-        }
+        };
     }
 
     static async updateJenisItem(req) {
@@ -287,7 +287,7 @@ export default class AlkesService {
             await AlkesRepository.editAlkesItem({
                 uuid: item.uuid,
                 harga_satuan: item.harga_satuan,
-            }, transaction)
+            }, transaction);
         }
 
         return totalHarga;

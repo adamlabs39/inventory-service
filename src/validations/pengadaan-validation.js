@@ -34,6 +34,8 @@ export default class PengadaanValidation {
 
     static GET_ALL_PEMBELIAN_BARANG = z.object({
         faskes_uuid: z.string().uuid(),
+        lokasi_stok_uuid: z.string()
+            .min(1, "Lokasi Stok tidak boleh kosong"),
         no_po: z.string().optional(),
         filter: z.string().optional(),
         search: z.string().optional(),

@@ -2,11 +2,11 @@ import express from "express";
 import pengadaanBarangRoutes from "./pengadaan-barang-routes.js";
 import pengeluaranBarangRoutes from "./pengeluaran-barang-routes.js"; 
 import penerimaanBarangRoutes from "./penerimaan-barang-routes.js";
-import dataMasterSupplierRoutes from './datamaster-supplier-routes.js'
-import riwayatTarifRoutes from './riwayat-tarif-routes.js';
+import dataMasterSupplierRoutes from "./datamaster-supplier-routes.js";
+import riwayatTarifRoutes from "./riwayat-tarif-routes.js";
 import kartuStokMutasiRoutes from "./kartu-stok-mutasi-routes.js";
 import stokOpnameRoutes from "./stok-opname-routes.js";
-import stokAdjustmentRoutes from './stok-adjustment-routes.js';
+import stokAdjustmentRoutes from "./stok-adjustment-routes.js";
 import stockRoutes from "./stok-routes.js";
 
 const apiBase = process.env.API_BASE || "api";

@@ -2,6 +2,7 @@ import NotfoundException from "../errors/notfound-exception.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
 import DatamasterSupplierRepository from "../repositories/datamaster-supplier-repository.js";
 import DatamasterSupplierValidation from "../validations/datamaster-supplier-validation.js";
+import BadRequestException from "../errors/bad-request-exception.js";
 
 export default class DatamasterSupplierService {
     static async create(payload) {
@@ -80,17 +81,32 @@ export default class DatamasterSupplierService {
 
     static async update(req) {
         const transaction = await sequelizeInstance.transaction();        
+        const validatedData = await DatamasterSupplierValidation.UPDATE_SUPPLIER.parseAsync(req);
+
+        if (validatedData.code) {
+            const isExist = await DatamasterSupplierRepository.getCode(
+                validatedData.code,
+                validatedData.uuid,
+                validatedData.faskes_uuid,
+            );
+
+            if (isExist) {
+                throw new BadRequestException([{
+                    field: "code",
+                    message: "Kode ini sudah terdaftar"
+                }]);
+            }
+        }
         try {
-            const validatedData = await DatamasterSupplierValidation.UPDATE_SUPPLIER.parseAsync(req);
             await DatamasterSupplierRepository.update(validatedData, transaction);
             if (validatedData.supllier_items) {
                 await DatamasterSupplierRepository.deleteAllSupplierItem(validatedData.uuid, transaction);
                 if (validatedData.supllier_items.length > 0) {
                     const newItems = validatedData.supllier_items.map((item) => ({
                         ...item,
-                        supllier_items: validatedData.uuid,
+                        supllier_uuid: validatedData.uuid,
                         faskes_uuid: validatedData.faskes_uuid
-                    }))
+                    }));
                     await DatamasterSupplierRepository.bulkCreateSupplierItem(newItems, transaction);
                 }
             }
@@ -101,7 +117,7 @@ export default class DatamasterSupplierService {
             });
         } catch (error) {
             await transaction.rollback();
-            throw error
+            throw error;
         }
     }
 
