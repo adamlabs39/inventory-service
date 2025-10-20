@@ -9,7 +9,7 @@ export default class PengadaanBarangController {
         faskes_uuid: req.author.faskesUuid,
         petugas_pembuat_po: req.author.username,
         petugas_pembuat_po_uuid: req.author.user_uuid
-      }
+      };
       const result = await PengadaanBarangService.create(payload);
       res.status(201).json(successResponse("Data berhasil disimpan", result));
     } catch (error) {
@@ -22,7 +22,7 @@ export default class PengadaanBarangController {
       const options = {
         ...req.query,
         faskes_uuid: req.author.faskesUuid,
-      }
+      };
       const result = await PengadaanBarangService.getAll(options);
       res.status(200).json(
           successResponse(
@@ -41,7 +41,7 @@ export default class PengadaanBarangController {
       const payload = {
         uuid: req.params.uuid,
         faskes_uuid: req.author.faskesUuid,
-      }
+      };
       const result = await PengadaanBarangService.getDetail(payload);
       res.status(200).json(successResponse("data berhasil didapat", result));
     } catch (error) {
@@ -69,7 +69,7 @@ export default class PengadaanBarangController {
         ...req.body,
         uuid: req.params.uuid,
         faskes_uuid: req.author.faskesUuid,
-      }
+      };
       await PengadaanBarangService.cancelPembelianBarang(payload);
       res.status(200).json(successResponse("data berhasil dibatalkan"));
     } catch (error) {

@@ -34,7 +34,7 @@ export default class PenerimaanBarangService {
             uuid: validatedData.uuid,
             faskes_uuid: validatedData.faskes_uuid,
             status: "diterima", 
-            tanggal_penerimaan: validatedData.tanggal_terima,
+            tanggal_terima: validatedData.tanggal_terima,
             no_faktur: validatedData.no_faktur,
             tanggal_faktur: validatedData.tanggal_faktur,
             no_surat_jalan: validatedData.no_surat_jalan,

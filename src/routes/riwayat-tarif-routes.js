@@ -5,13 +5,13 @@ const riwayatTarifRoutes = express.Router();
 
 // Route untuk mendapatkan semua data riwayat tarif
 riwayatTarifRoutes.get(
-    `/`, 
+    "/", 
     RiwayatTarifController.getAll
 );
 
 // Route untuk mendapatkan detail riwayat tarif berdasarkan UUID
 riwayatTarifRoutes.get(
-    `/:uuid`, 
+    "/:uuid", 
     RiwayatTarifController.getByUuid
 );
 
