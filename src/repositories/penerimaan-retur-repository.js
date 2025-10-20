@@ -10,10 +10,10 @@ export default class PenerimaanReturRepository {
             faskes_uuid: request.faskes_uuid,
             lokasi_stok_tujuan_uuid: request.lokasi_stok_tujuan_uuid,
             [Op.or]: [
-                {no_retur: {[Op.iLike]: `%${request.search || ''}%`}},
+                {no_retur: {[Op.iLike]: `%${request.search || ""}%`}},
                 sequelizeInstance.where(
-                    sequelizeInstance.col('lokasi_stok_awal.name'),
-                    {[Op.iLike]: `%${request.search || ''}%`}
+                    sequelizeInstance.col("lokasi_stok_awal.name"),
+                    {[Op.iLike]: `%${request.search || ""}%`}
                 )
             ],
         };
@@ -24,16 +24,16 @@ export default class PenerimaanReturRepository {
 
         const option = {
             where: whereRetur,
-            attributes: ['uuid', 'tanggal_retur', 'no_retur', 'alasan_retur', 'petugas_retur', 'jenis_stok', 'kategori_item', 'jenis_item'],
+            attributes: ["uuid", "tanggal_retur", "no_retur", "alasan_retur", "petugas_retur", "jenis_stok", "kategori_item", "jenis_item"],
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok_awal',
-                    attributes: ['name']
+                    as: "lokasi_stok_awal",
+                    attributes: ["name"]
                 }
             ],
-            order: [['tanggal_retur', 'DESC']],
-        }
+            order: [["tanggal_retur", "DESC"]],
+        };
 
         return await Pagination.init(ReturUnitModel, request, option);
     }
@@ -44,14 +44,14 @@ export default class PenerimaanReturRepository {
                 uuid: request.uuid,
             },
             attributes: {
-                exclude: ['created_at', 'updated_at', 'deleted_at']
+                exclude: ["created_at", "updated_at", "deleted_at"]
             },
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok_awal',
+                    as: "lokasi_stok_awal",
                     required: true,
-                    attributes: ['name']
+                    attributes: ["name"]
                 },
                 {
                     model: LokasiStokModel,
@@ -63,25 +63,25 @@ export default class PenerimaanReturRepository {
                     model: ReturUnitItemModel,
                     as: "items",
                     required: false,
-                    attributes: ['uuid', 'qty', 'qty_terima'],
+                    attributes: ["uuid", "qty", "qty_terima"],
                     include: [
                         {
                             model: ItemMedisModel,
-                            as: 'item',
+                            as: "item",
                             required: false,
-                            attributes: ['name'],
+                            attributes: ["name"],
                             include: [
                                 {
                                     model: SatuanModel,
                                     as: "satuan_penggunaan",
                                     required: false,
-                                    attributes: ['name']
+                                    attributes: ["name"]
                                 }
                             ]
                         }
                     ]
                 }
             ]
-        })
+        });
     }
 }

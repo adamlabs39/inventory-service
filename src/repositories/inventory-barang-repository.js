@@ -1,5 +1,5 @@
 import Pagination from "../helpers/pagination.js";
-import {Op, where} from "sequelize";
+import {Op} from "sequelize";
 import {toEpochDate} from "../helpers/date-helper.js";
 import {
     PembelianBarangSupplierModel,
@@ -9,6 +9,7 @@ import {
 } from "@adameds/model-sdk/inventory";
 import {ConversionModel, ItemMedisModel, JenisStokModel, LokasiStokModel} from "@adameds/model-sdk/farmasi";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
+import NotfoundException from "../errors/notfound-exception.js";
 
 sequelizeInstance.sync({
     alter: true,
@@ -18,7 +19,8 @@ sequelizeInstance.sync({
 export default class InventoryBarangRepository {
     static async createPembelianBarang(req, transaction) {
         const dataForModel = { ...req };
-        if (dataForModel.hasOwnProperty('is_cito')) {
+        // eslint-disable-next-line no-prototype-builtins
+        if (dataForModel.hasOwnProperty("is_cito")) {
             dataForModel.isCito = req.is_cito;
             delete dataForModel.is_cito;
         }
@@ -97,10 +99,14 @@ export default class InventoryBarangRepository {
                 }
             ];
 
+            if (req.lokasi_stok_uuid) {
+                whereClause.lokasi_stok_uuid = req.lokasi_stok_uuid;
+            }
+
             if (req.search) {
                 whereClause[Op.or] = [
                     { no_po: { [Op.iLike]: `%${req.search}%` } },
-                    { '$spplr.name$': { [Op.iLike]: `%${req.search}%` } }
+                    { "$spplr.name$": { [Op.iLike]: `%${req.search}%` } }
                 ];
             }
 
@@ -258,14 +264,26 @@ export default class InventoryBarangRepository {
     }
 
     static async updatePurchaseOrderItems(payload, transaction) {
-        const { uuid, faskes_uuid, ...dataToUpdate } = payload;
-        return await PembelianBarangSupplierItemModel.update(dataToUpdate, {
-            where: {
-                uuid: uuid,
-                faskes_uuid: faskes_uuid, 
-            },
-            transaction,
+        const dataToUpdate = {
+            qty_terima: payload.qty_terima,
+            exp_date: new Date(payload.exp_date),
+        };
+
+        const whereCondition = {
+            uuid: payload.uuid,
+            faskes_uuid: payload.faskes_uuid
+        };
+
+        const result = await PembelianBarangSupplierItemModel.update(dataToUpdate, {
+            where: whereCondition,
+            transaction: transaction,
         });
+
+        if (result[0] === 0) {
+            throw new NotfoundException(`Item PO dengan UUID ${payload.uuid} tidak ditemukan untuk di-update.`);
+        }
+
+        return result;
     }
 
     static async bulkCreateStokMedis(payload, transaction) {
@@ -304,17 +322,17 @@ export default class InventoryBarangRepository {
                 is_return: null,
             },
             attributes: [
-                'uuid',
-                'no_faktur',
-                'tanggal_faktur',
-                ['no_po', 'no_penerimaan'],
-                'tanggal_penerimaan',
-                [sequelizeInstance.col('spplr.name'), 'supplier']
+                "uuid",
+                "no_faktur",
+                "tanggal_faktur",
+                ["no_po", "no_penerimaan"],
+                "tanggal_penerimaan",
+                [sequelizeInstance.col("spplr.name"), "supplier"]
             ],
             include: [
                 {
                     model: MasterSupplierModel,
-                    as: 'spplr',
+                    as: "spplr",
                     required: true,
                     attributes: []
                 }
@@ -327,7 +345,7 @@ export default class InventoryBarangRepository {
         }
 
         if (req.date) {
-            const [ day, month, year ] = req.date.split('-').map(Number);
+            const [ day, month, year ] = req.date.split("-").map(Number);
             const startOfDay = new Date(year, month - 1, day, 0, 0, 0);
             const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 

@@ -20,11 +20,11 @@ export default class PenerimaanReturService {
         }
 
         response.items?.forEach((item) => {
-            item.dataValues.qty = `${item.qty} ${item.item?.satuan_penggunaan?.name}`
-            item.dataValues.qty_terima = `${item.qty_terima} ${item.item?.satuan_penggunaan?.name}`
+            item.dataValues.qty = `${item.qty} ${item.item?.satuan_penggunaan?.name}`;
+            item.dataValues.qty_terima = `${item.qty_terima} ${item.item?.satuan_penggunaan?.name}`;
             item.dataValues.name = item.item?.name;
             item.dataValues.item = undefined;
-        })
+        });
 
         return response;
     }

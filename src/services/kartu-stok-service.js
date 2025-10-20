@@ -9,7 +9,7 @@ export default class KartuStokService {
 
         let result = {};
 
-        result.pagination = data.pagination
+        result.pagination = data.pagination;
 
         result.data = data.data?.map((item) => {
             return {
@@ -23,7 +23,7 @@ export default class KartuStokService {
                 lokasi_stok_uuid: req.lokasi_stok_uuid,
                 lokasi_stok: item.stocks[0]?.lokasi_stok?.name,
                 sisa_stok: item.stocks?.reduce((acc, item) => acc + item.sisa_stok, 0),
-            }
+            };
         });
 
         return result;

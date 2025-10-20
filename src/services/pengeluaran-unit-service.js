@@ -29,7 +29,7 @@ export default class PengeluaranUnitService {
         const pengeluaranReq = {...req};
         pengeluaranReq.items = undefined;
         pengeluaranReq.uuid = uuidv7();
-        pengeluaranReq.no_pengeluaran = Utils.generate4Code('PGL');
+        pengeluaranReq.no_pengeluaran = Utils.generate4Code("PGL");
 
 
         const pengeluaranItemReq = req.items.map((item) => {
@@ -38,7 +38,7 @@ export default class PengeluaranUnitService {
                 pengeluaran_unit_uuid: pengeluaranReq.uuid,
                 faskes_uuid: pengeluaranReq.faskes_uuid,
                 uuid: uuidv7()
-            }
+            };
         });
 
         pengeluaranReq.total_item = pengeluaranItemReq.length;
@@ -90,7 +90,7 @@ export default class PengeluaranUnitService {
                         jenis_stok_uuid: stock.item_medis_jenis_stok?.jenis_stok_uuid,
                         lokasi_stok_uuid: req.lokasi_stok_awal_uuid,
                         type: "defisit"
-                    })
+                    });
 
                     mutasiItemsPelayanan.push({
                         item_uuid: stock.item_medis_jenis_stok?.item_medis_uuid,
@@ -99,7 +99,7 @@ export default class PengeluaranUnitService {
                         jenis_stok_uuid: stock.item_medis_jenis_stok?.jenis_stok_uuid,
                         lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
                         type: "surplus"
-                    })
+                    });
                 }
 
                 await StockMedisRepository.bulkCreate(stocks, transaction);
@@ -137,7 +137,7 @@ export default class PengeluaranUnitService {
                         jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
                         lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
                         type: "defisit"
-                    })
+                    });
 
                 }
 
@@ -152,7 +152,7 @@ export default class PengeluaranUnitService {
                     },
                     items: mutasiStocks,
                     type: "defisit"
-                })
+                });
             }
         } catch (e) {
             await transaction.rollback();
@@ -175,33 +175,28 @@ export default class PengeluaranUnitService {
                 sisa_stok: item.sisa_stok,
                 harga_satuan: item.harga_satuan,
                 exp_date: item.exp_date
-            }
+            };
         });
     }
 
     static async getAll(req) {
-        ZodValidator.validate(PengeluaranUnitValidation.GET_ALL, req);
-
-        let result = await PengeluaranUnitRepository.getAll(req);
-
-        if (!result.data) {
-            throw new BadRequestException("Data not found");
+        const validatedReq = await PengeluaranUnitValidation.GET_ALL.parseAsync(req);
+        let result = await PengeluaranUnitRepository.getAll(validatedReq);
+        if (result && result.data) {
+            result.data = result.data.map((item) => {
+                return {
+                    no_pengeluaran: item.no_pengeluaran,
+                    tanggal_pengeluaran: item.tanggal_pengeluaran,
+                    jenis_pengeluaran: item.jenis_pengeluaran,
+                    kategori_item: item.kategori_item,
+                    jenis_item: item.jenis_item,
+                    petugas_pengeluaran: item.petugas_pengeluaran,
+                    jenis_stok: item.jenis_stok?.name,
+                    lokasi_stok_akhir: item.lokasi_stok_akhir?.name,
+                    uuid: item.uuid,
+                };
+            });
         }
-
-        result.data = result.data.map((item) => {
-            return {
-                no_pengeluaran: item.no_pengeluaran,
-                tanggal_pengeluaran: item.tanggal_pengeluaran,
-                jenis_pengeluaran: item.jenis_pengeluaran,
-                kategori_item: item.kategori_item,
-                jenis_item: item.jenis_item,
-                petugas_pengeluaran: item.petugas_pengeluaran,
-                jenis_stok: item.jenis_stok?.name,
-                lokasi_stok_akhir: item.lokasi_stok_akhir?.name,
-                uuid: item.uuid,
-            }
-        });
-
         return result;
     }
 
@@ -226,7 +221,7 @@ export default class PengeluaranUnitService {
                 satuan: `${item.konversi?.satuan_penggunaan}/${item.konversi?.konversi}`,
                 harga: item.harga_satuan,
                 total: item.harga_satuan * item.qty
-            }
+            };
         });
         data.dataValues.jenis_stok = data.dataValues.jenis_stok?.name;
         data.dataValues.lokasi_stok_akhir = data.dataValues.lokasi_stok_akhir?.name;

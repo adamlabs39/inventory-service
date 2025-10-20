@@ -15,7 +15,7 @@ export default class PermintaanUnitService {
     static async getAll(req) {
         ZodValidator.validate(PermintaanUnitValidation.GET_ALL, req);
 
-        req.status = req.status ? req.status.split(",") : ['request', 'request_sebagian', 'verified', 'verif_sebagian', 'dikirim', 'cancel'];
+        req.status = req.status ? req.status.split(",") : ["request", "request_sebagian", "verified", "verif_sebagian", "dikirim", "cancel"];
 
         const result = await PermintaanUnitRepository.getAll(req);
 
@@ -30,7 +30,7 @@ export default class PermintaanUnitService {
 
             return result;
         } else {
-            return []
+            return [];
         }
     }
 
@@ -45,7 +45,7 @@ export default class PermintaanUnitService {
                 item.dataValues.item_medis = item.item_medis?.name;
                 item.dataValues.konversi = `${item.konversi?.satuan_pembelian}/${item.konversi?.konversi}`;
                 item.dataValues.stok_awal_lokasi_penerima = `${item.stok_awal_lokasi_penerima} ${item.konversi?.satuan_penggunaan}`;
-            })
+            });
 
             return result;
         } else {
@@ -102,7 +102,7 @@ export default class PermintaanUnitService {
             // region CREATE NEW PERMINTAAN & DELETE NON USED ITEMS IN CURRENT PERMINTAAN
             const newPermintaan = permintaan.dataValues;
             newPermintaan.uuid = uuidv7();
-            newPermintaan.no_permintaan = Utils.generate4Code('PRM');
+            newPermintaan.no_permintaan = Utils.generate4Code("PRM");
             newPermintaan.status = "request_sebagian";
 
             await PermintaanUnitRepository.create(newPermintaan, transaction);
@@ -151,7 +151,7 @@ export default class PermintaanUnitService {
                         jenis_stok_uuid: newPermintaan.jenis_stok_uuid,
                         lokasi_stok_uuid: newPermintaan.lokasi_stok_awal_uuid,
                         type: "defisit"
-                    })
+                    });
                 }
             }
             // endregion
@@ -184,7 +184,7 @@ export default class PermintaanUnitService {
                     source: "Gudang",
                 },
                 items: mutasiItems
-            })
+            });
             // endregion
 
             await transaction.commit();
@@ -209,7 +209,7 @@ export default class PermintaanUnitService {
             faskes_uuid: req.faskes_uuid,
             code: permintaan.dataValues.no_permintaan,
             limit: 100000
-        })
+        });
 
         try {
             let medicalStocks = await StockMedisRepository.getSome(permintaan.dataValues.medical_stocks.map((item) => item.stock_medis_uuid));
@@ -230,7 +230,7 @@ export default class PermintaanUnitService {
                     harga_satuan: item.harga_satuan +
                         (item.harga_satuan * konfigurasiHarga.margin) +
                         (item.harga_satuan * konfigurasiHarga.ppn),
-                }
+                };
             });
 
             await StockMedisRepository.bulkCreate(medicalStocks, transaction);
@@ -259,9 +259,9 @@ export default class PermintaanUnitService {
                         type: "surplus",
                         petugas: req.petugas_kirim,
                         keterangan: item.keterangan
-                    }
+                    };
                 })
-            })
+            });
 
             await transaction.commit();
 

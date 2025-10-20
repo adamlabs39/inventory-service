@@ -2,12 +2,30 @@ import sequelizeInstance from "../configurations/sequelize-instance.js";
 import BadRequestException from "../errors/bad-request-exception.js";
 import Utils from "../helpers/utils.js";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
+import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
 import SettingRepository from "../repositories/setting-repository.js";
 import PengadaanValidation from "../validations/pengadaan-validation.js";
 
 export default class PengadaanBarangService {
   static async create(payload) {
     const validatedData = await PengadaanValidation.CREATE_PEMBELIAN_BARANG.parseAsync(payload);
+
+    const itemUuidsFromPayload = [...new Set(validatedData.items.map(item => item.item_uuid))];
+
+    const validItemsCount = await ItemMedisJenisStokRepository.countValidItemsForJenisStok(
+        itemUuidsFromPayload,
+        validatedData.jenis_stok_uuid,
+        validatedData.faskes_uuid
+    );
+
+    if (validItemsCount !== itemUuidsFromPayload.length) {
+        throw new BadRequestException([
+            {
+                field: "items",
+                message: "Terdapat satu atau lebih item yang tidak sesuai dengan Jenis Stok yang dipilih. Harap periksa kembali."
+            }
+        ]);
+    }
 
     const transaction = await sequelizeInstance.transaction();
     try {
@@ -35,7 +53,7 @@ export default class PengadaanBarangService {
         isCito: validatedData.is_cito,
       };
       delete dataPembelianBarang.is_cito;
-      const po = await InventoryBarangRepository.createPembelianBarang(dataPembelianBarang, transaction,)
+      const po = await InventoryBarangRepository.createPembelianBarang(dataPembelianBarang, transaction,);
 
       if (validatedData.items && validatedData.items.length > 0) {
         const itemsToCreate = validatedData.items.map(item => ({
@@ -110,11 +128,13 @@ export default class PengadaanBarangService {
           total_harga: item.total_harga ?? 0,
           harga_satuan: item.harga_satuan ?? 0,
           qty_order: item.qty_order ?? 0,
+          qty_terima: item.qty_terima,
           satuan_beli: `${item.cnvrsn?.satuan_pembelian ?? "-"}/${
             item.cnvrsn?.konversi ?? ""
           } ${item.cnvrsn?.satuan_penggunaan ?? "-"}`,
           nama: item.item_medis?.name ?? "",
           item_uuid: item.item_uuid ?? "",
+          exp_date: item.exp_date,
           conversion_uuid: item.konversi_uuid ?? "",
           satuan_beli_uuid: item.cnvrsn?.satuan_pembelian_uuid ?? "",
         })) ?? [],
@@ -138,13 +158,13 @@ export default class PengadaanBarangService {
         faskes_uuid: validatedPayload.faskes_uuid,
     });
 
-    if (purchaseOrder.status !== 'pending') {
+    if (purchaseOrder.status !== "pending") {
       throw new BadRequestException([
         {
           field: "status",
           message: `Hanya PO dengan status pending yang dapat diubah. Status saat ini: ${purchaseOrder.status}`
         }
-      ])
+      ]);
     }
     return await InventoryBarangRepository.update(validatedPayload);
   }
@@ -157,13 +177,30 @@ export default class PengadaanBarangService {
       faskes_uuid: validatedData.faskes_uuid,
     });
 
-    if (purchaseOrder.status !== 'pending') {
+    if (purchaseOrder.status !== "pending") {
       throw new BadRequestException([
         {
           field: "status",
           message: `Hanya PO dengan status pending yang dapat diubah. Status saat ini: ${purchaseOrder.status}`
         }
-      ])
+      ]);
+    }
+
+    const itemUuidsFromPayload = [...new Set(validatedData.items.map(item => item.item_uuid))];
+
+    const validItemsCount = await ItemMedisJenisStokRepository.countValidItemsForJenisStok(
+      itemUuidsFromPayload,
+      validatedData.jenis_stok_uuid,
+      validatedData.faskes_uuid
+    );
+
+    if (validItemsCount !== itemUuidsFromPayload.length) {
+      throw new BadRequestException([
+        {
+          field: "items",
+          message: "Terdapat satu atau lebih item yang tidak sesuai dengan Jenis Stok yang dipilih. Harap periksa kembali."
+        }
+      ]);
     }
 
     const transaction = await sequelizeInstance.transaction();

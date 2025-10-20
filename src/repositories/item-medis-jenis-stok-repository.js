@@ -9,6 +9,7 @@ import {
 import { StockMedisModel } from "@adameds/model-sdk/inventory";
 import { Op } from "sequelize";
 import Pagination from "../helpers/pagination.js";
+import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class ItemMedisJenisStokRepository {
   static async getForKartuStok(req) {
@@ -168,5 +169,19 @@ export default class ItemMedisJenisStokRepository {
       },
       attributes: ["uuid", "jenis_stok_uuid", "item_medis_uuid"],
     });
+  }
+  
+  static async countValidItemsForJenisStok(itemUuids, jenisStokUuid, faskesUuid) {
+    try {
+      return await ItemMedisJenisStokModel.count({
+        where: {
+          item_medis_uuid: { [Op.in]: itemUuids },
+          jenis_stok_uuid: jenisStokUuid,
+          faskes_uuid: faskesUuid
+        }
+      });
+    } catch (error) {
+      throw new InternalServerException(`Gagal menghitung item valid: ${error.message}`);
+    } 
   }
 }

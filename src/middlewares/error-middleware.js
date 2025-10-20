@@ -6,6 +6,7 @@ import UnauthorizedException from "../errors/unauthorized-exception.js";
 import DuplicateException from "../errors/duplicate-exception.js";
 import { ZodError } from "zod";
 import zodErrorParser from "../helpers/zod-error-parser.js";
+import InternalServerException from "../errors/internal-server-exception.js";
 
 const errorMiddleware = (error, request, response, nextFunction) => {
     if (error instanceof NotfoundException) {
@@ -20,6 +21,8 @@ const errorMiddleware = (error, request, response, nextFunction) => {
         response.status(400).json(errorResponse("Duplicate Data", error.errors));
     } else if (error instanceof ZodError) {
         response.status(400).json(errorResponse("Validasi gagal", zodErrorParser(error.errors)));
+    } else if (error instanceof InternalServerException) {
+        response.status(error.code).json(errorResponse(error.message));
     } else {
         response.status(500).json(
         errorResponse("Internal Server Error", [

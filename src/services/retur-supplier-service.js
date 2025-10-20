@@ -14,6 +14,7 @@ import RiwayatMutasiService from "./riwayat-mutasi-service.js";
 import ItemMedisRepository from "../repositories/item-medis-repository.js";
 import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
 import InternalServerException from "../errors/internal-server-exception.js";
+import SettingRepository from "../repositories/setting-repository.js";
 
 export default class ReturSupplierService {
     static async getAll(payload) {
@@ -33,7 +34,7 @@ export default class ReturSupplierService {
                 jenis_item: item.pembelian_barang_supplier?.jenis_item,
                 kategori_item: item.pembelian_barang_supplier?.kategori_item,
             };
-        })
+        });
 
         return result;
     }
@@ -113,55 +114,63 @@ export default class ReturSupplierService {
     }
 
     static async create(req) {
-        ZodValidator.validate(ReturSupplierValidation.CREATE, req);
-        const transaction = await sequelizeInstance.transaction();
+        const validatedData = await ReturSupplierValidation.CREATE.parseAsync(req);
 
-        const pembelian = await PengadaanBarangService.getDetail({uuid: req.pembelian_supplier_uuid, faskes_uuid: req.faskes_uuid});
+        const pembelian = await PengadaanBarangService.getDetail({
+            uuid: validatedData.pembelian_supplier_uuid,
+            faskes_uuid: validatedData.faskes_uuid,
+        });
+
+        if (!pembelian || !pembelian.uuid) {
+            throw new NotfoundException("Data pembelian tidak ditemukan.");
+        }
 
         if (!pembelian.lokasi_stok_uuid) {
             throw new NotfoundException("Lokasi Stok uuid tidak ditemukan di pembelian terkait");
         }
 
-        req.lokasi_stok_uuid = pembelian.lokasi_stok_uuid;
-        req.status = 'retur';
-        req.supplier_uuid = pembelian.supplier_uuid;
-        req.no_retur_supplier = Utils.generate4Code("RTS");
-        req.uuid = uuidv7();
-        req.ppn = req.ppn ? 11 : 0;
-
-        if (!req.tanggal_retur) {
-            req.tanggal_retur = toEpochDate(Date.now());
-        }
+        const transaction = await sequelizeInstance.transaction();
 
         try {
-            await ReturSupplierRepository.create(req, transaction);
-
-            if (req.items) {
-                req.items = req.items.map((item) => {
-                    return {
-                        ...item,
-                        faskes_uuid: req.faskes_uuid,
-                        retur_supplier_uuid: req.uuid,
-                        item_type: "retur"
-                    }
-                })
+            let ppnRate = 0;
+            if (validatedData.ppn === true) {
+                ppnRate = await SettingRepository.getCurrentPpnRate();
             }
+            const returHeaderData = {
+                ...validatedData,
+                uuid: uuidv7(),
+                no_retur_supplier: Utils.generate4Code("RTS"),
+                lokasi_stok_uuid: pembelian.lokasi_stok_uuid,
+                supplier_uuid: pembelian.supplier_uuid,
+                status: "retur",
+                ppn: ppnRate,
+                tanggal_retur: validatedData.tanggal_retur || toEpochDate(Date.now()),
+            };
 
-            await ReturSupplierRepository.createItems(req.items, transaction);
+            await ReturSupplierRepository.create(returHeaderData, transaction);
 
-            await InventoryBarangRepository.changeReturnStatus({uuid: req.pembelian_supplier_uuid}, transaction);
+            const returItemsData = validatedData.items.map((item) => ({
+                ...item,
+                faskes_uuid: validatedData.faskes_uuid,
+                retur_supplier_uuid: returHeaderData.uuid,
+                item_type: "retur",
+            }));
 
-            const konfigurasiHarga = await KonfigurasiHargaRepository.get(req.faskes_uuid);
+            await ReturSupplierRepository.createItems(returItemsData, transaction);
+
+            await InventoryBarangRepository.changeReturnStatus({uuid: validatedData.pembelian_supplier_uuid}, transaction);
+
+            const konfigurasiHarga = await KonfigurasiHargaRepository.get(validatedData.faskes_uuid);
             const mutasiItems = [];
 
-            for (const item of req.items) {
+            for (const item of returItemsData) {
                 const itemDetail = await ItemMedisRepository.getByUuid({uuid: item.item_uuid});
 
                 if (!itemDetail) {
                     throw new NotfoundException(`Item dengan uuid ${item.item_uuid} tidak ditemukan`);
                 }
 
-                const items = await StockMedisRepository.reduceQuantity({
+                const affectedStocks = await StockMedisRepository.reduceQuantity({
                     item_medis_uuid: item.item_uuid,
                     jenis_stok_uuid: pembelian.jenis_stok_uuid,
                     quantity: item.qty_retur,
@@ -170,7 +179,7 @@ export default class ReturSupplierService {
                     lokasi_stok_uuid: pembelian.lokasi_stok_uuid
                 }, transaction);
 
-                for (const reducedStock of items) {
+                for (const reducedStock of affectedStocks) {
                     mutasiItems.push({
                         item_uuid: item.item_uuid,
                         exp_date: reducedStock.expired_date,
@@ -179,22 +188,19 @@ export default class ReturSupplierService {
                         jenis_stok_uuid: pembelian.jenis_stok_uuid,
                         lokasi_stok_uuid: pembelian.lokasi_stok_uuid,
                         type: "defisit"
-                    })
+                    });
                 }
             }
 
             await RiwayatMutasiService.create({
-                faskes_uuid: req.faskes_uuid,
+                faskes_uuid: validatedData.faskes_uuid,
                 sumber_mutasi: "inventory",
                 with_check_stock: true,
-                petugas: req.petugas_retur,
-                code: req.no_retur_supplier,
-                keterangan: {
-                    description: "Retur Supplier",
-                },
+                petugas: validatedData.petugas_retur,
+                code: returHeaderData.no_retur_supplier,
+                keterangan: { description: "Retur Supplier" },
                 items: mutasiItems
-            })
-
+            }, { transaction });
 
             await transaction.commit();
         } catch (e) {
@@ -234,7 +240,7 @@ export default class ReturSupplierService {
             petugas_retur: req.petugas_retur,
             available_items: result.pbsu?.map((item) => {
                 const formattedExpDate = item.exp_date
-                    ? `${String(new Date(item.exp_date).getDate()).padStart(2, '0')}-${String(new Date(item.exp_date).getMonth() + 1).padStart(2, '0')}-${new Date(item.exp_date).getFullYear()}` : null;
+                    ? `${String(new Date(item.exp_date).getDate()).padStart(2, "0")}-${String(new Date(item.exp_date).getMonth() + 1).padStart(2, "0")}-${new Date(item.exp_date).getFullYear()}` : null;
                 return {
                     item_uuid: item.item_uuid,
                     name: item.item_medis?.name,
@@ -246,9 +252,9 @@ export default class ReturSupplierService {
                     exp_date: formattedExpDate,
                     qty: item.qty_order,
                     harga_satuan: item.harga_satuan,
-                }
+                };
             })
-        }
+        };
     }
 
     static async acceptReplacement(payload) {
@@ -278,7 +284,7 @@ export default class ReturSupplierService {
             status: "terima",
             jenis_penggantian: validatedData.type,
             tanggal_penggantian: validatedData.tanggal_penggantian || toEpochDate(Date.now()),
-        }
+        };
 
         try {
             if (validatedData.type === "uang") {
@@ -316,7 +322,7 @@ export default class ReturSupplierService {
                         item_medis_jenis_stok_uuid: itemJenisStokUuid,
                         lokasi_stok_uuid: pembelian.lokasi_stok_uuid,
                         no_po: pembelian.no_po,
-                    }
+                    };
                 });
 
                 await StockMedisRepository.bulkCreate(stocks, transaction);

@@ -15,10 +15,10 @@ export default class PenerimaanValidation {
         catatan_penerimaan: z.string().optional(),
         diskon: z.number().optional(),
         materai: z.number().optional(),
-        ppn: z.number().optional(),
+        ppn: z.boolean().optional(),
         items: z.array(z.object({
             uuid: z.string().uuid("UUID item pembelian tidak valid"),
-            qty_diterima: z.number().nonnegative("Jumlah diterima tidak boleh negatif"),
+            qty_terima: z.number().nonnegative("Jumlah diterima tidak boleh negatif"),
             exp_date: z.number({ required_error: "Tanggal kedaluwarsa wajib diisi" }),
         })).min(1, "Minimal ada 1 item yang diterima"),
     }).strict();
