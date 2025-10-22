@@ -10,7 +10,7 @@ export default class PenerimaanBarangController {
                 faskes_uuid: req.author.faskesUuid,
                 petugas_penerima_uuid: req.author.user_uuid,
                 petugas_penerima: req.author.username
-            }
+            };
             const result = await PenerimaanBarangService.createPenerimaan(payload);
             res.status(201).json(successResponse("Data berhasil disimpan", result));
         } catch (error) {

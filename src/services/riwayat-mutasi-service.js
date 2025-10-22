@@ -13,7 +13,7 @@ export default class RiwayatMutasiService {
         const data = await RiwayatMutasiRepository.getAll(req);
 
         let result = {};
-        result.pagination = data.pagination
+        result.pagination = data.pagination;
 
         result.data = data.data.map((item) => {
             return {
@@ -35,7 +35,7 @@ export default class RiwayatMutasiService {
                 stok_awal: item.stok_awal,
                 stok_mutasi: item.stok_mutasi,
                 sisa_stok: item.stok_awal + item.stok_mutasi,
-            }
+            };
         });
 
         // result.pagination = data.pagination;
@@ -76,14 +76,14 @@ export default class RiwayatMutasiService {
                     keterangan: req.keterangan,
                 });
             }
-        })
+        });
 
         if (req.with_check_stock) {
             const stocks = await StockMedisRepository.getForMutasi({
                 lokasi_stok_uuids: mutasi.map(item => item.lokasi_stok_uuid),
                 item_uuids: mutasi.map(item => item.item_uuid),
                 jenis_stok_uuids: mutasi.map(item => item.jenis_stok_uuid),
-            })
+            });
 
 
             mutasi.forEach((item) => {
@@ -96,7 +96,7 @@ export default class RiwayatMutasiService {
                         item.stok_awal += stock.sisa_stok;
                     }
                 }
-            })
+            });
         }
 
         await RiwayatMutasiRepository.create(mutasi, options);

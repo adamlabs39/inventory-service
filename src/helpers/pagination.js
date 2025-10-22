@@ -20,6 +20,6 @@ export default class Pagination{
         return {
             data: mappedRows,
             pagination: Utils.paginationHelper(page, limit, query.count)
-        }
+        };
     }
 }

@@ -8,8 +8,8 @@ import {
     JenisStokModel, LokasiStokModel, ManufactureModel,
     SatuanModel
 } from "@adameds/model-sdk/farmasi";
-import Pagination from "../helpers/pagination.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
+import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class StockMedisRepository {
     static async reduceQuantity(req, t) {
@@ -434,30 +434,34 @@ export default class StockMedisRepository {
     }
 
     static async getRiwayatTarif(req) {
+        const whereClause = {
+            faskes_uuid: req.faskes_uuid,
+        };
+
+        if (req.jenis_stok_uuid) {
+            whereClause.jenis_stok_uuid = req.jenis_stok_uuid;
+        }
+
+        // Tentukan limit dan offset untuk pagination
+        const limit = parseInt(req.limit) || 10;
+        const page = parseInt(req.page) || 1;
+        const offset = (page - 1) * limit;
+
         const option = {
-            where: {
-                jenis_stok_uuid: {
-                    [Op.iLike]: `%${req.jenis_stok_uuid ?? ""}%`
-                },
-                faskes_uuid: req.faskes_uuid,
-            },
+            where: whereClause, 
             attributes: {
-                exclude: [
-                    "deleted_at",
-                    "created_at",
-                    "updated_at",
-                ],
+                exclude: ["deleted_at", "created_at", "updated_at"],
             },
             include: [
                 {
                     model: ItemMedisModel,
                     as: "item_medis",
                     required: true,
-                    attributes: ["name", "jenis_item"],
+                    attributes: ["name", "jenis_item", "uuid"], 
                     where: {
                         [Op.or]: [
-                            {name: {[Op.iLike]: `%${req.search ?? ""}%`}},
-                            {code: {[Op.iLike]: `%${req.search ?? ""}%`}},
+                            { name: { [Op.iLike]: `%${req.search ?? ""}%` } },
+                            { code: { [Op.iLike]: `%${req.search ?? ""}%` } },
                         ],
                         jenis_item: {
                             [Op.in]: req.jenis_item ? [req.jenis_item] : ["obat", "alkes"],
@@ -474,11 +478,9 @@ export default class StockMedisRepository {
                     model: StockMedisModel,
                     as: "stocks",
                     required: true,
-                    attributes: ["sisa_stok", "uuid"],
+                    attributes: ["uuid", "sisa_stok", "exp_date", "harga_satuan", "created_at"],
                     where: {
-                        sisa_stok: {
-                            [Op.gt]: 0
-                        },
+                        sisa_stok: { [Op.gt]: 0 },
                     },
                     include: [
                         {
@@ -486,20 +488,38 @@ export default class StockMedisRepository {
                             as: "konversi",
                             required: false,
                             attributes: {
-                                exclude: [
-                                    "deleted_at",
-                                    "created_at",
-                                    "updated_at",
-                                    "faskes_uuid",
-                                ],
+                                exclude: ["deleted_at", "created_at", "updated_at", "faskes_uuid"],
                             }
                         }
                     ]
                 }
-            ]
+            ],
+            limit: limit,
+            offset: offset,
+            distinct: true,
         };
 
-        return await Pagination.init(ItemMedisJenisStokModel, req, option);
+        try {
+            // Jalankan query menggunakan findAndCountAll
+            const { count, rows } = await ItemMedisJenisStokModel.findAndCountAll(option);
+
+            // Kembalikan hasil dalam format yang diharapkan oleh service
+            return {
+                data: rows,
+                pagination: {
+                    total: count,
+                    page: page,
+                    page_size: limit,
+                    total_pages: Math.ceil(count / limit),
+                    // Tambahkan prev_page dan next_page jika helpermu biasa menggunakannya
+                    prev_page: page > 1 ? page - 1 : null,
+                    next_page: page < Math.ceil(count / limit) ? page + 1 : null,
+                }
+            };
+        } catch (error) {
+            console.error("Error fetching Riwayat Tarif:", error);
+            throw new InternalServerException("Gagal mengambil data riwayat tarif.");
+        }
     }
 
     static async getPurchaseHistory(req) {

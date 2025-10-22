@@ -6,18 +6,18 @@ import StockController from "../controllers/stock-controller.js";
 const stockRoutes = express.Router();
 
 stockRoutes.get(
-    '/',
+    "/",
     StockController.getAvailableStock,
-)
+);
 
 stockRoutes.post(
-    '/reduce',
+    "/reduce",
     StockController.reduceStock,
-)
+);
 
 stockRoutes.post(
-    '/increase',
+    "/increase",
     StockController.increaseStock,
-)
+);
 
 export default stockRoutes;
