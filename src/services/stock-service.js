@@ -13,10 +13,6 @@ export default class StockService {
         const validatedReq = StockValidation.GET_STOCK.parse(req);
         const stocks = await StockRepository.findStockByItem(validatedReq);
 
-        if (stocks.length === 0) {
-            throw new NotFoundException("Stok untuk item yang dicari tidak ditemukan");
-        }
-
         return stocks.map(stock => ({
             item_uuid: stock["item_medis_jenis_stok.item_medis_uuid"],
             item_name: stock["item_medis_jenis_stok.item_medis.name"],

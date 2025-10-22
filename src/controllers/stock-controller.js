@@ -5,7 +5,6 @@ export default class StockController {
     static async getAvailableStock(req, res, next) {
         try {
             const options = {
-                item_uuids: req.query.item_uuids ? req.query.item_uuids.split(',') : [],
                 lokasi_stok_uuid: req.query.lokasi_stok_uuid,
                 faskes_uuid: req.author.faskesUuid
             }

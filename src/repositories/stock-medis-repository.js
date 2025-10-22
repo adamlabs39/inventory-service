@@ -548,6 +548,12 @@ export default class StockMedisRepository {
             whereClause.lokasi_stok_uuid = req.lokasi_stok_uuid;
         }
 
+        const itemMedisJenisStokWhere = {};
+
+        if (req.item_uuids && req.item_uuids.length > 0) {
+            itemMedisJenisStokWhere.item_medis_uuid = { [Op.in]: req.item_uuids };
+        }
+
         return await StockMedisModel.findAll({
             attributes: [
                 [sequelizeInstance.fn("SUM", sequelizeInstance.col("sisa_stok")), "jumlah_tersedia"],
@@ -573,9 +579,7 @@ export default class StockMedisRepository {
                     as: "item_medis_jenis_stok",
                     attributes: ["uuid", "item_medis_uuid"],
                     required: true,
-                    where: {
-                        item_medis_uuid: { [Op.in]: req.item_uuids }
-                    },
+                    where: itemMedisJenisStokWhere, 
                     include: [
                         {
                             model: ItemMedisModel,
