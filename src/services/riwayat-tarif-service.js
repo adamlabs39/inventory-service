@@ -1,6 +1,7 @@
 import StockMedisRepository from "../repositories/stock-medis-repository.js";
 import NotfoundException from "../errors/notfound-exception.js";
 import ConversionRepository from "../repositories/Conversion_repository.js";
+import HargaItemRepository from "../repositories/harga-item-repository.js";
 import {toEpochDate} from "../helpers/date-helper.js";
 
 export default class RiwayatTarifService {
@@ -10,8 +11,10 @@ export default class RiwayatTarifService {
             result.data = result.data.map((item) => {
                 const totalStock = (item.stocks || []).reduce((acc, batch) => acc + batch.sisa_stok, 0);
                 const latestStockBatch = (item.stocks || []).sort((a, b) => b.created_at - a.created_at)[0];
+                const hargaItem = item.detail_harga;
                 return {
                     uuid: item.item_medis?.uuid ?? null,
+                    stock_medis_uuid: latestStockBatch?.uuid ?? null,
                     name: item.item_medis?.name,
                     jenis_item: item.item_medis?.jenis_item,
                     jenis_stok: item.detail_stok?.name,
@@ -20,11 +23,9 @@ export default class RiwayatTarifService {
                     satuan_pembelian: latestStockBatch?.konversi?.satuan_pembelian,
                     satuan_penggunaan: latestStockBatch?.konversi?.satuan_penggunaan,
                     exp_date: latestStockBatch?.exp_date ? toEpochDate(latestStockBatch.exp_date) : null,
-
-                    // TODO Belum Disesuaikan dengan tabel harga item
-                    harga_dasar: latestStockBatch?.harga_satuan ?? 0,
-                    hna: latestStockBatch?.harga_satuan ?? 0, 
-                    hja: latestStockBatch?.harga_satuan ?? 0, 
+                    harga_dasar: hargaItem?.harga_dasar ?? 0,
+                    hna: hargaItem?.hna ?? 0,
+                    hja: hargaItem?.harga_terakhir ?? 0,
                 };
             });
         }
@@ -50,12 +51,20 @@ export default class RiwayatTarifService {
             faskes_uuid: req.faskes_uuid,
         };
 
-        const [purchaseHistory, conversions] = await Promise.all([
+        const [purchaseHistory, conversions, hargaItem] = await Promise.all([
             StockMedisRepository.getPurchaseHistory(historyOptions),
-            ConversionRepository.getAll(conversionOptions)
+            ConversionRepository.getAll(conversionOptions),
+            HargaItemRepository.findOneByItemJenisStok(
+                itemJenisStok.uuid, 
+                req.faskes_uuid
+            )
         ]);
 
         const { item_medis, detail_stok } = itemJenisStok;
+
+        const hargaDasar = hargaItem?.harga_dasar ?? 0;
+        const hna = hargaItem?.hna ?? 0;
+        const hja = hargaItem?.harga_terakhir ?? 0;
 
         return {
             kode_item: item_medis?.code,
@@ -63,9 +72,9 @@ export default class RiwayatTarifService {
             jenis_item: item_medis?.jenis_item,
             jenis_stok: detail_stok?.name,
             satuan_penggunaan: item_medis?.satuan_penggunaan?.name,
-            harga_dasar: stock.harga_satuan,
-            hna: stock.harga_satuan,
-            hja: stock.harga_satuan,
+            harga_dasar: hargaDasar,
+            hna: hna,
+            hja: hja,
             pabrik: item_medis?.manufacture?.name,
             conversions: conversions ?? [],
             purchase_history: (purchaseHistory ?? []).map((item) => ({

@@ -8,6 +8,7 @@ import StockMedisRepository from "../repositories/stock-medis-repository.js";
 import BadRequestException from "../errors/bad-request-exception.js";
 import sequelizeInstance from "../configurations/sequelize-instance.js";
 import RiwayatMutasiService from "./riwayat-mutasi-service.js";
+import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class PengeluaranUnitService {
     static async create(req) {
@@ -51,57 +52,35 @@ export default class PengeluaranUnitService {
             const allMutasiItems = []; 
 
             for (const item of pengeluaranItems) {
-                const stockDataFromSource = await StockMedisRepository.getDetail({ 
-                    uuid: item.stock_uuid, 
-                    faskes_uuid: validatedData.faskes_uuid 
-                }); 
-                if (!stockDataFromSource || !stockDataFromSource.item_medis_jenis_stok) {
-                    throw new NotfoundException(`Detail stok sumber dengan UUID ${item.stock_uuid} atau relasinya tidak ditemukan.`);
+                const affectedStocks = await StockMedisRepository.reduceQuantity({
+                    stock_medis_uuid: item.stock_uuid, 
+                    quantity: item.qty,
+                    faskes_uuid: validatedData.faskes_uuid,
+                    lokasi_stok_awal_uuid: lokasiStokAwalUuidToUse 
+                }, transaction);
+
+                if (!affectedStocks) { 
+                    throw new InternalServerException(`Pengurangan stok gagal untuk ${item.stock_uuid}`);
                 }
+
+                const stockDataFromSource = affectedStocks;
 
                 const jenisStokFromHeader = validatedData.jenis_stok_uuid;
                 const jenisStokFromBatch = stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid;
 
                 if (jenisStokFromHeader !== jenisStokFromBatch) {
-                    throw new BadRequestException(
-                        `Jenis Stok (${jenisStokFromHeader}) tidak cocok ` +
-                        `dengan Jenis Stok item (${item.stock_uuid}) yang dikeluarkan (${jenisStokFromBatch}).`
-                    );
+                    throw new BadRequestException("Data tidak cocok");
                 }
 
-                const affectedStocks = await StockMedisRepository.reduceQuantity({
-                    stock_medis_uuid: item.stock_uuid, 
-                    quantity: item.qty,
-                    faskes_uuid: validatedData.faskes_uuid,
-                }, transaction);
-
-                 if (!affectedStocks || !Array.isArray(affectedStocks)){
-                     const reducedStockInfo = Array.isArray(affectedStocks) ? affectedStocks[0] : affectedStocks; 
-                     if(!reducedStockInfo) {
-                        throw new InternalServerException(`Pengurangan stok gagal untuk ${item.stock_uuid}`);
-                     }
-                      allMutasiItems.push({
-                         item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
-                         exp_date: stockDataFromSource.exp_date, 
-                         stok_awal: reducedStockInfo.previous_stock, 
-                         stok_mutasi: item.qty * -1, 
-                         jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
-                         lokasi_stok_uuid: lokasiStokAwalUuidToUse,
-                         type: "defisit"
-                     });
-                 } else {
-                      for (const reducedStock of affectedStocks) {
-                          allMutasiItems.push({
-                              item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
-                              exp_date: reducedStock.expired_date, 
-                              stok_awal: reducedStock.previous_stock,
-                              stok_mutasi: reducedStock.quantity * -1, 
-                              jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
-                              lokasi_stok_uuid: lokasiStokAwalUuidToUse,
-                              type: "defisit"
-                          });
-                      }
-                 }
+                allMutasiItems.push({
+                    item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
+                    exp_date: stockDataFromSource.exp_date, 
+                    stok_awal: stockDataFromSource.previous_stock, 
+                    stok_mutasi: item.qty * -1, 
+                    jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
+                    lokasi_stok_uuid: lokasiStokAwalUuidToUse,
+                    type: "defisit"
+                });
 
                 if (validatedData.jenis_pengeluaran === "pengeluaran tanpa permintaan") {
                     const { previous_stock: targetPreviousStock } = await StockMedisRepository.increaseQuantity({
@@ -113,6 +92,7 @@ export default class PengeluaranUnitService {
                         harga_satuan: stockDataFromSource.harga_satuan,
                         konversi_uuid: stockDataFromSource.konversi_uuid,
                         faskes_uuid: validatedData.faskes_uuid,
+                        no_po: stockDataFromSource.no_po,
                     }, transaction);
 
                     allMutasiItems.push({

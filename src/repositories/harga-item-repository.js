@@ -2,6 +2,20 @@ import { HargaItemModel } from "@adameds/model-sdk/farmasi";
 import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class HargaItemRepository {
+    static async findOneByItemJenisStok(itemMedisJenisStokUuid, faskesUuid) {
+        try {
+            const hargaItem = await HargaItemModel.findOne({
+                where: {
+                    item_medis_jenis_stok_uuid: itemMedisJenisStokUuid,
+                    faskes_uuid: faskesUuid,
+                },
+            });
+            return hargaItem;
+        } catch (e) {
+            throw e;
+        }
+    }
+
     static async updateOrInsertHargaItem(data, transaction) {
         if (!data.item_medis_jenis_stok_uuid) {
             throw new InternalServerException("item_medis_jenis_stok_uuid wajib diisi saat update harga.");
