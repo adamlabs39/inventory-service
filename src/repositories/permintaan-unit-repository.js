@@ -15,34 +15,34 @@ export default class PermintaanUnitRepository {
                 [Op.or]: [
                     {no_permintaan: {[Op.iLike]: `%${req.search}%`}},
                     sequelizeInstance.where(
-                        sequelizeInstance.col('lokasi_stok_tujuan.name'),
-                        {[Op.iLike]: `%${req.search || ''}%`}
+                        sequelizeInstance.col("lokasi_stok_tujuan.name"),
+                        {[Op.iLike]: `%${req.search || ""}%`}
                     )
                 ],
                 lokasi_stok_awal_uuid : req.lokasi_gudang_uuid,
             },
             attributes: [
-                'uuid',
-                'tanggal_permintaan',
-                'no_permintaan',
-                'kategori_item',
-                'jenis_stok',
-                'jenis_item',
-                'petugas_permintaan',
-                'petugas_verifikasi',
-                'petugas_kirim',
-                'petugas_batal_tolak',
-                'status',
-                'cito'],
+                "uuid",
+                "tanggal_permintaan",
+                "no_permintaan",
+                "kategori_item",
+                "jenis_stok",
+                "jenis_item",
+                "petugas_permintaan",
+                "petugas_verifikasi",
+                "petugas_kirim",
+                "petugas_batal_tolak",
+                "status",
+                "cito"],
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok_tujuan',
+                    as: "lokasi_stok_tujuan",
                     required: false,
-                    attributes: ['name']
+                    attributes: ["name"]
                 }
             ]
-        }
+        };
 
         return await Pagination.init(PermintaanUnitModel, req, option);
     }
@@ -54,36 +54,36 @@ export default class PermintaanUnitRepository {
                 deleted_at: null,
             },
             attributes : {
-                exclude: ['deleted_at', 'created_at', 'updated_at', 'id']
+                exclude: ["deleted_at", "created_at", "updated_at", "id"]
             },
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok_tujuan',
+                    as: "lokasi_stok_tujuan",
                     required: false,
-                    attributes: ['name']
+                    attributes: ["name"]
                 },
                 {
                     model : PermintaanUnitItemModel,
-                    as : 'items',
+                    as : "items",
                     required : false,
                     include : [
                         {
                             model : ItemMedisModel,
-                            as : 'item_medis',
+                            as : "item_medis",
                             required : false,
-                            attributes: ['name']
+                            attributes: ["name"]
                         },
                         {
                             model : ConversionModel,
-                            as : 'konversi',
+                            as : "konversi",
                             required : false,
-                            attributes : ['konversi', 'satuan_pembelian', 'satuan_penggunaan'],
+                            attributes : ["konversi", "satuan_pembelian", "satuan_penggunaan"],
                         }
                     ]
                 }
             ]
-        })
+        });
 
         if (!result) {
             throw new BadRequestException( "Data tidak ditemukan");
@@ -101,7 +101,7 @@ export default class PermintaanUnitRepository {
                 },
                 transaction
             }
-        )
+        );
     }
 
     static async create(req, transaction){
@@ -110,6 +110,6 @@ export default class PermintaanUnitRepository {
             {
                 transaction
             }
-        )
+        );
     }
 }

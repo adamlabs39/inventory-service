@@ -6,6 +6,7 @@ import authorizationSdk from "@adameds/authorization-sdk";
 import MODELMERGE from "./models/model-synchronize.js";
 import efp from "express-fileupload";
 import defineAssociations from "./configurations/database-associations.js";
+import morgan from "morgan";
 
 const APPLICATION_PORT = process.env.APPLICATION_PORT || 8080;
 const APPLICATION_HOST = process.env.APPLICATION_HOST || 'localhost';
@@ -26,6 +27,7 @@ app.use(
     })
 );
 app.use(express.json());
+app.use(morgan("combined"));
 app.use(express.urlencoded({extended: true}));
 app.use(authorizationSdk([]));
 app.use(efp());

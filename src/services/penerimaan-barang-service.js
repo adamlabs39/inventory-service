@@ -5,6 +5,7 @@ import NotfoundException from "../errors/notfound-exception.js";
 import InventoryBarangRepository from "../repositories/inventory-barang-repository.js";
 import ItemMedisJenisStokRepository from "../repositories/item-medis-jenis-stok-repository.js";
 import SettingRepository from "../repositories/setting-repository.js";
+import HargaItemRepository from "../repositories/harga-item-repository.js"; 
 import PenerimaanValidation from "../validations/penerimaan-validation.js";
 
 export default class PenerimaanBarangService {
@@ -27,7 +28,7 @@ export default class PenerimaanBarangService {
 
         let ppnRate = 0;
         if (validatedData.ppn === true) {
-            ppnRate =  await SettingRepository.getCurrentPpnRate();
+            ppnRate = await SettingRepository.getCurrentPpnRate(); 
         }
 
         const dataToUpdateHeader = {
@@ -44,12 +45,13 @@ export default class PenerimaanBarangService {
             petugas_penerima_uuid: validatedData.petugas_penerima_uuid,
             diskon: validatedData.diskon,
             materai: validatedData.materai,
-            ppn: ppnRate,
+            ppn: ppnRate, 
         };
 
         const transaction = await sequelizeInstance.transaction();
         try {
             await InventoryBarangRepository.updateStatusToDiterima(dataToUpdateHeader, transaction);
+            
             if (validatedData.items && validatedData.items.length > 0) {
                 for (const item of validatedData.items) {
                     await InventoryBarangRepository.updatePurchaseOrderItems({
@@ -59,50 +61,72 @@ export default class PenerimaanBarangService {
                 }
             }
 
-            const itemUuidsInPo = purchaseOrder.pbsu.map(item => item.item_uuid);
+            const itemPoMap = new Map(
+                purchaseOrder.pbsu.map(item => [item.uuid, item])
+            );
 
+            const itemUuidsInPo = purchaseOrder.pbsu.map(item => item.item_uuid);
             const itemMedisJenisStokList = await ItemMedisJenisStokRepository.getForPengadaanBarang({
                 item_medis_uuids: itemUuidsInPo,
                 jenis_stok_uuid: purchaseOrder.jenis_stok_uuid,
                 faskes_uuid: validatedData.faskes_uuid,
             });
 
-            const itemsToCreateStock = validatedData.items
-                .filter(item => item.qty_terima > 0)
-                .map(itemDiterima => {
-                    const itemPoAsli = purchaseOrder.pbsu.find(i => i.uuid === itemDiterima.uuid);
-                    if (!itemPoAsli) {
-                        throw new BadRequestException(`Item dengan UUID ${itemDiterima.uuid} tidak ditemukan di dalam PO asli.`);
-                    }
+            const itemStokMap = new Map(
+                itemMedisJenisStokList.map(ims => [ims.item_medis_uuid, ims])
+            );
 
-                    const correspondingItem = itemMedisJenisStokList.find(
-                        ims => ims.item_medis_uuid === itemPoAsli.item_uuid
-                    );
+            const itemsToCreateStock = [];
+            
+            for (const itemDiterima of validatedData.items) {
+                if (itemDiterima.qty_terima <= 0) {
+                    continue;   
+                }
 
-                    if (!correspondingItem) {
-                        throw new InternalServerException(`Konfigurasi jenis stok untuk item ${itemPoAsli.item_uuid} tidak ditemukan.`);
-                    }
-
-                    return {
-                        exp_date: new Date(itemDiterima.exp_date),
-                        stok: itemDiterima.qty_terima,      
-                        sisa_stok: itemDiterima.qty_terima, 
-                        konversi_uuid: itemPoAsli.konversi_uuid, 
-                        lokasi_stok_uuid: purchaseOrder.lokasi_stok_uuid,
-                        item_medis_jenis_stok_uuid: correspondingItem.uuid,
-                        harga_satuan: itemPoAsli.harga_satuan, 
-                        no_po: purchaseOrder.no_po,
-                        faskes_uuid: validatedData.faskes_uuid,
-                    };
+                const itemPoAsli = itemPoMap.get(itemDiterima.uuid);
+                if (!itemPoAsli) {
+                    throw new BadRequestException(`Item dengan UUID ${itemDiterima.uuid} tidak ditemukan di dalam PO asli.`);
+                }
+                const correspondingItemStok = itemStokMap.get(itemPoAsli.item_uuid);
+                if (!correspondingItemStok) {
+                    throw new InternalServerException(`Konfigurasi jenis stok untuk item ${itemPoAsli.item_uuid} (${itemPoAsli.item_nama}) tidak ditemukan.`);
+                }
+                itemsToCreateStock.push({
+                    exp_date: new Date(itemDiterima.exp_date),
+                    stok: itemDiterima.qty_terima,      
+                    sisa_stok: itemDiterima.qty_terima, 
+                    konversi_uuid: itemPoAsli.konversi_uuid, 
+                    lokasi_stok_uuid: purchaseOrder.lokasi_stok_uuid,
+                    item_medis_jenis_stok_uuid: correspondingItemStok.uuid, 
+                    harga_satuan: itemPoAsli.harga_satuan, 
+                    no_po: purchaseOrder.no_po,
+                    faskes_uuid: validatedData.faskes_uuid,
                 });
 
-            await InventoryBarangRepository.bulkCreateStokMedis(itemsToCreateStock, transaction);
+                const harga_dasar = itemPoAsli.harga_satuan;
+                const hna = harga_dasar * (1 + ppnRate); 
+
+                await HargaItemRepository.updateOrInsertHargaItem(
+                    {
+                        item_medis_jenis_stok_uuid: correspondingItemStok.uuid,
+                        faskes_uuid: validatedData.faskes_uuid,
+                        harga_dasar: harga_dasar,
+                        hna: hna,
+                    },
+                    transaction
+                );
+            }
+
+            if (itemsToCreateStock.length > 0) {
+                await InventoryBarangRepository.bulkCreateStokMedis(itemsToCreateStock, transaction);
+            }
+
+            // TODO : LOG TO TABLE HISTORI MUTASI
 
             await transaction.commit();
 
             return await InventoryBarangRepository.getDetail(validatedData);
-            // TODO : LOG TO TABLE HISTORI MUTASI
-            // TODO : CREATE DATA IN HARGA ITEM TABLE
+
         } catch (e) {
             await transaction.rollback();
             throw e;

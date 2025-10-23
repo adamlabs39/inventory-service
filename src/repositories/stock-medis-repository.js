@@ -158,14 +158,16 @@ export default class StockMedisRepository {
                 throw new BadRequestException(`Stok medis dengan UUID ${req.stock_medis_uuid} tidak ditemukan.`);
             }
 
-            if (stock.sisa_stok < req.quantity) {
-                throw new BadRequestException(`${stock.dataValues.item_medis_jenis_stok?.dataValues?.item_medis?.name} not enough or empty`);
+            const previousStockValue = stock.sisa_stok;
+
+            if (previousStockValue < req.quantity) {
+                throw new BadRequestException(`${stock.item_medis_jenis_stok?.item_medis?.name || 'Item'} stok tidak cukup (tersedia: ${previousStockValue})`);
             }
 
-            const newStock = stock.sisa_stok - req.quantity;
+            const newStockValue = previousStockValue - req.quantity;
 
             const result = await StockMedisModel.update(
-                {sisa_stok: newStock},
+                {sisa_stok: newStockValue},
                 {
                     where: {uuid: req.stock_medis_uuid},
                     transaction: t
@@ -173,10 +175,13 @@ export default class StockMedisRepository {
             );
 
             if (result[0] === 0) {
-                throw new BadRequestException(`${stock.dataValues.item_medis_jenis_stok?.dataValues?.item_medis?.name}  stok medis tidak diupdate`);
+                throw new BadRequestException(`${stock.item_medis_jenis_stok?.item_medis?.name || 'Item'} stok medis tidak diupdate`);
             }
 
-            return stock;
+            return { 
+                ...stock.get({ plain: true }), 
+                previous_stock: previousStockValue 
+            };
         }
     }
 
@@ -442,10 +447,17 @@ export default class StockMedisRepository {
             whereClause.jenis_stok_uuid = req.jenis_stok_uuid;
         }
 
-        // Tentukan limit dan offset untuk pagination
         const limit = parseInt(req.limit) || 10;
         const page = parseInt(req.page) || 1;
         const offset = (page - 1) * limit;
+
+        const stockWhereClause = {
+            sisa_stok: { [Op.gt]: 0 },
+        };
+
+        if (req.lokasi_stok_uuid) {
+            stockWhereClause.lokasi_stok_uuid = req.lokasi_stok_uuid;
+        }
 
         const option = {
             where: whereClause, 
@@ -479,9 +491,7 @@ export default class StockMedisRepository {
                     as: "stocks",
                     required: true,
                     attributes: ["uuid", "sisa_stok", "exp_date", "harga_satuan", "created_at"],
-                    where: {
-                        sisa_stok: { [Op.gt]: 0 },
-                    },
+                    where: stockWhereClause,
                     include: [
                         {
                             model: ConversionModel,
@@ -500,10 +510,8 @@ export default class StockMedisRepository {
         };
 
         try {
-            // Jalankan query menggunakan findAndCountAll
             const { count, rows } = await ItemMedisJenisStokModel.findAndCountAll(option);
 
-            // Kembalikan hasil dalam format yang diharapkan oleh service
             return {
                 data: rows,
                 pagination: {
@@ -511,7 +519,6 @@ export default class StockMedisRepository {
                     page: page,
                     page_size: limit,
                     total_pages: Math.ceil(count / limit),
-                    // Tambahkan prev_page dan next_page jika helpermu biasa menggunakannya
                     prev_page: page > 1 ? page - 1 : null,
                     next_page: page < Math.ceil(count / limit) ? page + 1 : null,
                 }
@@ -541,6 +548,12 @@ export default class StockMedisRepository {
             whereClause.lokasi_stok_uuid = req.lokasi_stok_uuid;
         }
 
+        const itemMedisJenisStokWhere = {};
+
+        if (req.item_uuids && req.item_uuids.length > 0) {
+            itemMedisJenisStokWhere.item_medis_uuid = { [Op.in]: req.item_uuids };
+        }
+
         return await StockMedisModel.findAll({
             attributes: [
                 [sequelizeInstance.fn("SUM", sequelizeInstance.col("sisa_stok")), "jumlah_tersedia"],
@@ -566,9 +579,7 @@ export default class StockMedisRepository {
                     as: "item_medis_jenis_stok",
                     attributes: ["uuid", "item_medis_uuid"],
                     required: true,
-                    where: {
-                        item_medis_uuid: { [Op.in]: req.item_uuids }
-                    },
+                    where: itemMedisJenisStokWhere, 
                     include: [
                         {
                             model: ItemMedisModel,

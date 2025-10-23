@@ -11,156 +11,139 @@ import RiwayatMutasiService from "./riwayat-mutasi-service.js";
 
 export default class PengeluaranUnitService {
     static async create(req) {
-        // region VALIDATE REQUEST
-        ZodValidator.validate(PengeluaranUnitValidation.CREATE, req);
-
+        let validatedData;
+        let lokasiStokAwalUuidToUse;
+        
         if (req.jenis_pengeluaran === "pemusnahan barang") {
-            ZodValidator.validate(PengeluaranUnitValidation.CREATE_PEMUSNAHAN, req);
-        }
-
-        if (req.jenis_pengeluaran === "pengeluaran tanpa permintaan") {
-            ZodValidator.validate(PengeluaranUnitValidation.CREATE_PENGELUARAN_TANPA_PERMINTAAN, req);
+        validatedData = await PengeluaranUnitValidation.CREATE_PEMUSNAHAN.parseAsync(req);
+        lokasiStokAwalUuidToUse = validatedData.lokasi_stok_tujuan_uuid; 
+        } else if (req.jenis_pengeluaran === "pengeluaran tanpa permintaan") {
+            validatedData = await PengeluaranUnitValidation.CREATE_PENGELUARAN_TANPA_PERMINTAAN.parseAsync(req);
+            lokasiStokAwalUuidToUse = validatedData.lokasi_stok_awal_uuid; 
         } else {
-            req.lokasi_stok_awal_uuid = req.lokasi_stok_tujuan_uuid;
+            validatedData = await PengeluaranUnitValidation.CREATE.parseAsync(req);
+            lokasiStokAwalUuidToUse = validatedData.lokasi_stok_tujuan_uuid; 
         }
-        // endregion
 
-        // region MAPPING REQUEST
-        const pengeluaranReq = {...req};
-        pengeluaranReq.items = undefined;
-        pengeluaranReq.uuid = uuidv7();
-        pengeluaranReq.no_pengeluaran = Utils.generate4Code("PGL");
-
-
-        const pengeluaranItemReq = req.items.map((item) => {
-            return {
-                ...item,
-                pengeluaran_unit_uuid: pengeluaranReq.uuid,
-                faskes_uuid: pengeluaranReq.faskes_uuid,
-                uuid: uuidv7()
-            };
-        });
-
-        pengeluaranReq.total_item = pengeluaranItemReq.length;
-        pengeluaranReq.total_harga = pengeluaranItemReq.reduce((acc, item) => acc + (item.harga_satuan * item.qty), 0);
-        // endregion
-
-        // region INSERT REQUEST
         const transaction = await sequelizeInstance.transaction();
 
         try {
-            await PengeluaranUnitRepository.create(pengeluaranReq, transaction);
-            await PengeluaranUnitItemRepository.bulkCreate(pengeluaranItemReq, transaction);
-        } catch (e) {
-            await transaction.rollback();
-            throw e;
-        }
-        // endregion
+            const pengeluaranHeader = {
+                ...validatedData,
+                items: undefined, 
+                uuid: uuidv7(),
+                no_pengeluaran: Utils.generate4Code("PGL"),
+                lokasi_stok_awal_uuid: lokasiStokAwalUuidToUse,
+            };
 
-        // region ADJUST STOCK
-        const mutasiItemsInventory = [];
-        const mutasiItemsPelayanan = [];
+            const pengeluaranItems = validatedData.items.map((item) => ({
+                ...item,
+                pengeluaran_unit_uuid: pengeluaranHeader.uuid,
+                faskes_uuid: validatedData.faskes_uuid,
+                uuid: uuidv7()
+            }));
 
-        try {
-            if (req.jenis_pengeluaran === "pengeluaran tanpa permintaan") {
-                const stocks = [];
-                for (const item of pengeluaranItemReq) {
-                    let stock = await StockMedisRepository.reduceQuantity({
-                        stock_medis_uuid: item.stock_uuid,
-                        quantity: item.qty,
+            pengeluaranHeader.total_item = pengeluaranItems.length;
+            pengeluaranHeader.total_harga = pengeluaranItems.reduce((acc, item) => acc + (item.harga_satuan * item.qty), 0);
+
+            await PengeluaranUnitRepository.create(pengeluaranHeader, transaction);
+            await PengeluaranUnitItemRepository.bulkCreate(pengeluaranItems, transaction);
+            const allMutasiItems = []; 
+
+            for (const item of pengeluaranItems) {
+                const stockDataFromSource = await StockMedisRepository.getDetail({ 
+                    uuid: item.stock_uuid, 
+                    faskes_uuid: validatedData.faskes_uuid 
+                }); 
+                if (!stockDataFromSource || !stockDataFromSource.item_medis_jenis_stok) {
+                    throw new NotfoundException(`Detail stok sumber dengan UUID ${item.stock_uuid} atau relasinya tidak ditemukan.`);
+                }
+
+                const jenisStokFromHeader = validatedData.jenis_stok_uuid;
+                const jenisStokFromBatch = stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid;
+
+                if (jenisStokFromHeader !== jenisStokFromBatch) {
+                    throw new BadRequestException(
+                        `Jenis Stok (${jenisStokFromHeader}) tidak cocok ` +
+                        `dengan Jenis Stok item (${item.stock_uuid}) yang dikeluarkan (${jenisStokFromBatch}).`
+                    );
+                }
+
+                const affectedStocks = await StockMedisRepository.reduceQuantity({
+                    stock_medis_uuid: item.stock_uuid, 
+                    quantity: item.qty,
+                    faskes_uuid: validatedData.faskes_uuid,
+                }, transaction);
+
+                 if (!affectedStocks || !Array.isArray(affectedStocks)){
+                     const reducedStockInfo = Array.isArray(affectedStocks) ? affectedStocks[0] : affectedStocks; 
+                     if(!reducedStockInfo) {
+                        throw new InternalServerException(`Pengurangan stok gagal untuk ${item.stock_uuid}`);
+                     }
+                      allMutasiItems.push({
+                         item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
+                         exp_date: stockDataFromSource.exp_date, 
+                         stok_awal: reducedStockInfo.previous_stock, 
+                         stok_mutasi: item.qty * -1, 
+                         jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
+                         lokasi_stok_uuid: lokasiStokAwalUuidToUse,
+                         type: "defisit"
+                     });
+                 } else {
+                      for (const reducedStock of affectedStocks) {
+                          allMutasiItems.push({
+                              item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
+                              exp_date: reducedStock.expired_date, 
+                              stok_awal: reducedStock.previous_stock,
+                              stok_mutasi: reducedStock.quantity * -1, 
+                              jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
+                              lokasi_stok_uuid: lokasiStokAwalUuidToUse,
+                              type: "defisit"
+                          });
+                      }
+                 }
+
+                if (validatedData.jenis_pengeluaran === "pengeluaran tanpa permintaan") {
+                    const { previous_stock: targetPreviousStock } = await StockMedisRepository.increaseQuantity({
+                        item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
+                        quantity_to_add: item.qty,
+                        lokasi_stok_uuid: validatedData.lokasi_stok_tujuan_uuid, 
+                        jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
+                        exp_date: stockDataFromSource.exp_date,
+                        harga_satuan: stockDataFromSource.harga_satuan,
+                        konversi_uuid: stockDataFromSource.konversi_uuid,
+                        faskes_uuid: validatedData.faskes_uuid,
                     }, transaction);
 
-                    if (!stock) {
-                        throw new BadRequestException(`Stok medis dengan UUID ${item.stock_uuid} tidak ditemukan.`);
-                    }
-
-                    stock = stock.dataValues;
-                    stock.id = undefined;
-                    stock.uuid = uuidv7();
-                    stock.lokasi_stok_uuid = req.lokasi_stok_tujuan_uuid;
-                    stock.sisa_stok = item.qty;
-                    stock.stok = item.qty;
-
-                    stocks.push(stock);
-
-                    mutasiItemsInventory.push({
-                        item_uuid: stock.item_medis_jenis_stok?.item_medis_uuid,
-                        exp_date: stock.exp_date,
-                        stok_mutasi: item.qty,
-                        jenis_stok_uuid: stock.item_medis_jenis_stok?.jenis_stok_uuid,
-                        lokasi_stok_uuid: req.lokasi_stok_awal_uuid,
-                        type: "defisit"
-                    });
-
-                    mutasiItemsPelayanan.push({
-                        item_uuid: stock.item_medis_jenis_stok?.item_medis_uuid,
-                        exp_date: stock.exp_date,
-                        stok_mutasi: item.qty,
-                        jenis_stok_uuid: stock.item_medis_jenis_stok?.jenis_stok_uuid,
-                        lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
+                    allMutasiItems.push({
+                        item_uuid: stockDataFromSource.item_medis_jenis_stok.item_medis_uuid,
+                        exp_date: stockDataFromSource.exp_date,
+                        stok_awal: targetPreviousStock, 
+                        stok_mutasi: item.qty, 
+                        jenis_stok_uuid: stockDataFromSource.item_medis_jenis_stok.jenis_stok_uuid,
+                        lokasi_stok_uuid: validatedData.lokasi_stok_tujuan_uuid,
                         type: "surplus"
                     });
                 }
-
-                await StockMedisRepository.bulkCreate(stocks, transaction);
-
-                await RiwayatMutasiService.create({
-                    faskes_uuid: req.faskes_uuid,
-                    sumber_mutasi: "inventory",
-                    petugas: req.petugas_pengeluaran,
-                    code: pengeluaranReq.no_pengeluaran,
-                    with_check_stock: true,
-                    keterangan: {
-                        description: "Pengeluaran tanpa permintaan",
-                        destination: "Farmasi",
-                        source: "Gudang Farmasi",
-                    },
-                    items: [...mutasiItemsInventory, ...mutasiItemsPelayanan],
-                });
-            } else {
-                const mutasiStocks = [];
-
-                for (const item of pengeluaranItemReq) {
-                    const reducedStock = await StockMedisRepository.reduceQuantity({
-                        stock_medis_uuid: item.stock_uuid,
-                        quantity: item.qty,
-                    }, transaction);
-
-                    if (!reducedStock) {
-                        throw new BadRequestException("Stok medis tidak ditemukan");
-                    }
-
-                    mutasiStocks.push({
-                        item_uuid: reducedStock.item_medis_jenis_stok?.item_medis_uuid,
-                        exp_date: reducedStock.exp_date,
-                        stok_mutasi: item.qty,
-                        jenis_stok_uuid: reducedStock.item_medis_jenis_stok?.jenis_stok_uuid,
-                        lokasi_stok_uuid: req.lokasi_stok_tujuan_uuid,
-                        type: "defisit"
-                    });
-
-                }
-
-                await RiwayatMutasiService.create({
-                    faskes_uuid: req.faskes_uuid,
-                    sumber_mutasi: "inventory",
-                    petugas: req.petugas_pengeluaran,
-                    code: pengeluaranReq.no_pengeluaran,
-                    with_check_stock: true,
-                    keterangan: {
-                        description: req.jenis_pengeluaran,
-                    },
-                    items: mutasiStocks,
-                    type: "defisit"
-                });
             }
+
+            if (allMutasiItems.length > 0) {
+                 await RiwayatMutasiService.create({
+                    faskes_uuid: validatedData.faskes_uuid,
+                    sumber_mutasi: "inventory",
+                    petugas: validatedData.petugas_pengeluaran,
+                    code: pengeluaranHeader.no_pengeluaran,
+                    keterangan: { description: validatedData.jenis_pengeluaran },
+                    items: allMutasiItems,
+                }, { transaction });
+            }
+
+            await transaction.commit();
+
         } catch (e) {
             await transaction.rollback();
-            throw e;
+            throw e; 
         }
-        // endregion
-
-        await transaction.commit();
     }
 
     static async getAvailableStock(req) {
