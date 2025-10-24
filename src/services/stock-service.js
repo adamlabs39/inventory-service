@@ -76,7 +76,14 @@ export default class StockService {
 
             await transaction.commit();
 
-            return { item_uuid: validatedData.item_uuid };
+            const responsePayload = reducedStocks.map(stock => ({
+                stock_medis_uuid: stock.stock_medis_uuid,
+                quantity: stock.quantity,
+                expired_date: stock.expired_date,
+                stock_before: stock.previous_stock
+            }));
+
+            return responsePayload;
 
         } catch (error) {
             await transaction.rollback();
