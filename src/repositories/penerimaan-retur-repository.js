@@ -1,30 +1,28 @@
 import {ReturUnitItemModel, ReturUnitModel} from "@adameds/model-sdk/inventory";
 import {Op} from "sequelize";
 import {ItemMedisModel, LokasiStokModel, SatuanModel} from "@adameds/model-sdk/farmasi";
-import sequelizeInstance from "@adameds/model-sdk/instance";
 import Pagination from "../helpers/pagination.js";
 
 export default class PenerimaanReturRepository {
     static async getAll(request) {
-        const whereRetur = {
-            faskes_uuid: request.faskes_uuid,
-            lokasi_stok_tujuan_uuid: request.lokasi_stok_tujuan_uuid,
-            [Op.or]: [
-                {no_retur: {[Op.iLike]: `%${request.search || ""}%`}},
-                sequelizeInstance.where(
-                    sequelizeInstance.col("lokasi_stok_awal.name"),
-                    {[Op.iLike]: `%${request.search || ""}%`}
-                )
+        const { faskes_uuid, search = "", alasan_retur } = request;
+
+        const options = {
+            where: {
+                faskes_uuid: faskes_uuid,
+                [Op.or]: [
+                    { no_retur: { [Op.iLike]: `${search}` } },
+                    { "$lokasi_stok_awal.name$": { [Op.iLike]: `%${search}%` } }
+                ],
+
+                ...(alasan_retur && { alasan_retur: alasan_retur })
+            },
+
+            attributes: [
+                "uuid", "tanggal_retur", "no_retur", "alasan_retur", 
+                "petugas_retur", "jenis_stok", "kategori_item", "jenis_item"
             ],
-        };
 
-        if (request.alasan_retur) {
-            whereRetur.alasan_retur = request.alasan_retur;
-        }
-
-        const option = {
-            where: whereRetur,
-            attributes: ["uuid", "tanggal_retur", "no_retur", "alasan_retur", "petugas_retur", "jenis_stok", "kategori_item", "jenis_item"],
             include: [
                 {
                     model: LokasiStokModel,
@@ -32,10 +30,11 @@ export default class PenerimaanReturRepository {
                     attributes: ["name"]
                 }
             ],
+
             order: [["tanggal_retur", "DESC"]],
         };
 
-        return await Pagination.init(ReturUnitModel, request, option);
+        return await Pagination.init(ReturUnitModel, request, options);
     }
 
     static async getDetail(request) {

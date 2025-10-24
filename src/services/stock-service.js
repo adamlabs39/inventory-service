@@ -76,7 +76,14 @@ export default class StockService {
 
             await transaction.commit();
 
-            return { item_uuid: validatedData.item_uuid };
+            const responsePayload = reducedStocks.map(stock => ({
+                stock_medis_uuid: stock.stock_medis_uuid,
+                quantity: stock.quantity,
+                expired_date: stock.expired_date,
+                stock_before: stock.previous_stock
+            }));
+
+            return responsePayload;
 
         } catch (error) {
             await transaction.rollback();
@@ -84,64 +91,64 @@ export default class StockService {
         }
     }
 
-static async increaseStock(req) {
-    const validatedData = StockValidation.INCREASE_STOCK.parse(req);
-    const transaction = await sequelizeInstance.transaction();
+    static async increaseStock(req) {
+        const validatedData = StockValidation.INCREASE_STOCK.parse(req);
+        const transaction = await sequelizeInstance.transaction();
 
-    try {
-        // --- Langkah 1: Proses semua pembaruan stok item secara paralel ---
-        const stockUpdatePromises = validatedData.items.map(async (item) => {
-            const payloadForRepo = {
+        try {
+            // --- Langkah 1: Proses semua pembaruan stok item secara paralel ---
+            const stockUpdatePromises = validatedData.items.map(async (item) => {
+                const payloadForRepo = {
+                    item_uuid: item.item_uuid,
+                    quantity_to_add: item.quantity,
+                    lokasi_stok_uuid: item.lokasi_stok_uuid,
+                    jenis_stok_uuid: item.jenis_stok_uuid,
+                    exp_date: item.exp_date,
+                    harga_satuan: item.harga_satuan,
+                    faskes_uuid: validatedData.faskes_uuid,
+                };
+
+                const { previous_stock, existingStock } = await StockMedisRepository.increaseQuantity(payloadForRepo, transaction);
+
+                if (!existingStock) {
+                    throw new BadRequestException(`Batch stok asli untuk item dengan exp. date ${item.exp_date} tidak ditemukan. Retur tidak dapat diproses.`);
+                }
+
+                return { item, previous_stock };
+            });
+
+            const stockUpdateResults = await Promise.all(stockUpdatePromises);
+
+            // --- Langkah 2: Siapkan dan catat semua riwayat mutasi dalam satu panggilan ---
+            const allMutasiItems = stockUpdateResults.map(({ item, previous_stock }) => ({
                 item_uuid: item.item_uuid,
-                quantity_to_add: item.quantity,
-                lokasi_stok_uuid: item.lokasi_stok_uuid,
-                jenis_stok_uuid: item.jenis_stok_uuid,
                 exp_date: item.exp_date,
-                harga_satuan: item.harga_satuan,
+                stok_awal: previous_stock,
+                stok_mutasi: item.quantity,
+                jenis_stok_uuid: item.jenis_stok_uuid,
+                lokasi_stok_uuid: item.lokasi_stok_uuid,
+                type: "surplus"
+            }));
+
+            // Panggil RiwayatMutasiService satu kali dengan semua item,
+            await RiwayatMutasiService.create({
                 faskes_uuid: validatedData.faskes_uuid,
-            };
+                sumber_mutasi: validatedData.sumber_mutasi,
+                code: validatedData.kode_referensi,
+                petugas: validatedData.petugas,
+                keterangan: {
+                    description: `Penambahan stok dari ${validatedData.sumber_mutasi} no: ${validatedData.kode_referensi}`
+                },
+                items: allMutasiItems 
+            }, { transaction });
 
-            const { previous_stock, existingStock } = await StockMedisRepository.increaseQuantity(payloadForRepo, transaction);
+            await transaction.commit();
 
-            if (!existingStock) {
-                throw new BadRequestException(`Batch stok asli untuk item dengan exp. date ${item.exp_date} tidak ditemukan. Retur tidak dapat diproses.`);
-            }
+            return { message: "Stok berhasil ditambahkan." };
 
-            return { item, previous_stock };
-        });
-
-        const stockUpdateResults = await Promise.all(stockUpdatePromises);
-
-        // --- Langkah 2: Siapkan dan catat semua riwayat mutasi dalam satu panggilan ---
-        const allMutasiItems = stockUpdateResults.map(({ item, previous_stock }) => ({
-            item_uuid: item.item_uuid,
-            exp_date: item.exp_date,
-            stok_awal: previous_stock,
-            stok_mutasi: item.quantity,
-            jenis_stok_uuid: item.jenis_stok_uuid,
-            lokasi_stok_uuid: item.lokasi_stok_uuid,
-            type: "surplus"
-        }));
-
-        // Panggil RiwayatMutasiService satu kali dengan semua item,
-        await RiwayatMutasiService.create({
-            faskes_uuid: validatedData.faskes_uuid,
-            sumber_mutasi: validatedData.sumber_mutasi,
-            code: validatedData.kode_referensi,
-            petugas: validatedData.petugas,
-            keterangan: {
-                description: `Penambahan stok dari ${validatedData.sumber_mutasi} no: ${validatedData.kode_referensi}`
-            },
-            items: allMutasiItems 
-        }, { transaction });
-
-        await transaction.commit();
-
-        return { message: "Stok berhasil ditambahkan." };
-
-    } catch (error) {
-        await transaction.rollback();
-        throw error;
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
     }
-}
 }

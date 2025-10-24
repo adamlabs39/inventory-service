@@ -4,7 +4,7 @@ import {required} from "./message-validation-error.js";
 export default class PengeluaranUnitValidation {
     static CREATE = z.object({
         faskes_uuid: z.string().uuid(required),
-        jenis_pengeluaran: z.enum(['pemakaian unit', 'pengeluaran tanpa permintaan', 'pemusnahan barang'], { required_error: required }),
+        jenis_pengeluaran: z.enum(["pemakaian unit", "pengeluaran tanpa permintaan", "pemusnahan barang"], { required_error: required }),
         jenis_item: z.string().min(1, required),
         kategori_item: z.string().min(1, required),
         jenis_stok_uuid: z.string().uuid(required),
@@ -19,12 +19,11 @@ export default class PengeluaranUnitValidation {
             harga_satuan: z.number().positive(required),
             konversi_uuid: z.string().uuid(required),
             qty: z.number().int().positive(required),
-            stok_awal_lokasi_pengirim: z.number().nonnegative(required), 
         })).min(1, "Minimal harus ada 1 item")
     });
 
     static CREATE_PEMUSNAHAN = PengeluaranUnitValidation.CREATE.extend({
-        jenis_pemusnahan: z.enum(['rusak', 'kadaluarsa'], { required_error: required }),
+        jenis_pemusnahan: z.enum(["rusak", "kadaluarsa"], { required_error: required }),
     });
 
     static CREATE_PENGELUARAN_TANPA_PERMINTAAN = PengeluaranUnitValidation.CREATE.extend({
@@ -40,10 +39,10 @@ export default class PengeluaranUnitValidation {
 
     static GET_ALL = z.object({
         faskes_uuid: z.string().uuid("faskes_uuid tidak valid"),
-        lokasi_stok_uuid: z.string()
-            .min(1, "Lokasi Stok tidak boleh kosong")
-            .optional(),
+        lokasi_stok_uuid: z.string().min(1, "Lokasi Stok tidak boleh kosong").optional(),
         search: z.string().optional(),
+        page: z.string().optional(),
+        limit: z.string().optional()
     });
 
     static GET_DETAIL = z.object({

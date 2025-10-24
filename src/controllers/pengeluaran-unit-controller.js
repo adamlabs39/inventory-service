@@ -27,6 +27,7 @@ export default class PengeluaranUnitController {
 
   static async getAll(req, res, nextFunction) {
     try {
+      console.log("Controller req.query:", req.query);
       const options = {
         ...req.query,
         faskes_uuid: req.author.faskesUuid,

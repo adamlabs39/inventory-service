@@ -5,42 +5,10 @@ import StockMedisRepository from "../repositories/stock-medis-repository.js";
 
 export default class RiwayatMutasiService {
     static async getAll(req) {
-        ZodValidator.validate(RiwayatMutasiValidation.GET_ALL, req);
-
-        req.start_date = Number(req.start_date);
-        req.end_date = Number(req.end_date);
-
-        const data = await RiwayatMutasiRepository.getAll(req);
-
-        let result = {};
-        result.pagination = data.pagination;
-
-        result.data = data.data.map((item) => {
-            return {
-                transaksi: {
-                    code: item.code,
-                    sumber_mutasi: item.sumber_mutasi,
-                    tanggal: item.created_at,
-                },
-                item: {
-                    name: item.detail_item?.name,
-                    jenis_item: item.detail_item?.jenis_item,
-                    code: item.detail_item?.code,
-                    kategori: "Medis",
-                    jenis_stok: item.jenis_stok?.name,
-                },
-                exp_date: item.exp_date,
-                keterangan: item.keterangan,
-                petugas: item.petugas,
-                stok_awal: item.stok_awal,
-                stok_mutasi: item.stok_mutasi,
-                sisa_stok: item.stok_awal + item.stok_mutasi,
-            };
-        });
-
-        // result.pagination = data.pagination;
-
-        return result;
+        const validatedReq = await ZodValidator.validate(RiwayatMutasiValidation.GET_ALL, req);
+        const { data: rawData, pagination } = await RiwayatMutasiRepository.getAll(validatedReq);
+        const mappedData = rawData?.map(item => this._transformToMutasiDTO(item));
+        return { pagination: pagination,  data: mappedData || [] };
     }
 
     static async create(req, options = {}) {
@@ -100,5 +68,30 @@ export default class RiwayatMutasiService {
         }
 
         await RiwayatMutasiRepository.create(mutasi, options);
+    }
+
+    static _transformToMutasiDTO(item) {
+        return {
+            kode_transaksi: item.code,
+            sumber_mutasi: item.sumber_mutasi,
+            tanggal_mutasi: item.created_at,
+
+            nama_item: item.detail_item?.name,
+            kode_item: item.detail_item?.code,
+            jenis_item: item.detail_item?.jenis_item,
+            jenis_stok: item.jenis_stok?.name,
+            kategori_item: "Medis",
+
+            exp_date: item.exp_date, 
+            stok_awal: item.stok_awal,
+            stok_masuk: item.stok_mutasi > 0 ? item.stok_mutasi : 0, 
+            stok_keluar: item.stok_mutasi < 0 ? Math.abs(item.stok_mutasi) : 0, 
+            sisa_stok: item.stok_awal + item.stok_mutasi,
+
+            petugas: item.petugas,
+            keterangan: typeof item.keterangan === "object" && item.keterangan !== null 
+                        ? item.keterangan.description 
+                        : item.keterangan,
+        };
     }
 }

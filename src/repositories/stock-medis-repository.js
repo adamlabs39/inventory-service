@@ -3,6 +3,7 @@ import BadRequestException from "../errors/bad-request-exception.js";
 import {StockMedisModel} from "@adameds/model-sdk/inventory";
 import {
     ConversionModel,
+    HargaItemModel,
     ItemMedisJenisStokModel,
     ItemMedisModel,
     JenisStokModel, LokasiStokModel, ManufactureModel,
@@ -131,10 +132,17 @@ export default class StockMedisRepository {
 
             return result;
         } else if (req.stock_medis_uuid) {
+            const whereClause = {
+                uuid: req.stock_medis_uuid,
+                faskes_uuid: req.faskes_uuid
+            };
+
+            if (req.lokasi_stok_awal_uuid) {
+                whereClause.lokasi_stok_uuid = req.lokasi_stok_awal_uuid;
+            }
+
             const stock = await StockMedisModel.findOne({
-                where: {
-                    uuid: req.stock_medis_uuid
-                },
+                where: whereClause,
                 include: [
                     {
                         model: ItemMedisJenisStokModel,
@@ -151,7 +159,8 @@ export default class StockMedisRepository {
                         ],
                     }
                 ],
-
+                transaction: t,
+                lock: t.LOCK.UPDATE,
             });
 
             if (!stock) {
@@ -161,7 +170,7 @@ export default class StockMedisRepository {
             const previousStockValue = stock.sisa_stok;
 
             if (previousStockValue < req.quantity) {
-                throw new BadRequestException(`${stock.item_medis_jenis_stok?.item_medis?.name || 'Item'} stok tidak cukup (tersedia: ${previousStockValue})`);
+                throw new BadRequestException(`${stock.item_medis_jenis_stok?.item_medis?.name || "Item"} stok tidak cukup (tersedia: ${previousStockValue})`);
             }
 
             const newStockValue = previousStockValue - req.quantity;
@@ -175,7 +184,7 @@ export default class StockMedisRepository {
             );
 
             if (result[0] === 0) {
-                throw new BadRequestException(`${stock.item_medis_jenis_stok?.item_medis?.name || 'Item'} stok medis tidak diupdate`);
+                throw new BadRequestException(`${stock.item_medis_jenis_stok?.item_medis?.name || "Item"} stok medis tidak diupdate`);
             }
 
             return { 
@@ -213,11 +222,43 @@ export default class StockMedisRepository {
         if (existingStock) {
             const previous_stock = existingStock.sisa_stok;
             const new_stock = previous_stock + req.quantity_to_add;
-            await existingStock.update({ sisa_stok: new_stock }, { transaction: t });
+            await existingStock.update({ 
+                sisa_stok: new_stock 
+            }, { transaction: t });
             return { existingStock, previous_stock, new_stock };
-        } 
+        } else {
+            const itemJenisStok = await ItemMedisJenisStokModel.findOne({
+                where: {
+                    item_medis_uuid: req.item_uuid,
+                    jenis_stok_uuid: req.jenis_stok_uuid,
+                    faskes_uuid: req.faskes_uuid 
+                },
+                attributes: ["uuid"],
+                transaction: t
+            });
 
-        return { existingStock: null, previous_stock: null, new_stock: null };
+            if (!itemJenisStok) {
+                throw new InternalServerException(`Gagal menemukan relasi ItemMedisJenisStok untuk item ${req.item_uuid}`);
+            }
+
+            const newStockBatch = await StockMedisModel.create({
+                faskes_uuid: req.faskes_uuid,
+                lokasi_stok_uuid: req.lokasi_stok_uuid,
+                item_medis_jenis_stok_uuid: itemJenisStok.uuid,
+                konversi_uuid: req.konversi_uuid,
+                harga_satuan: req.harga_satuan,
+                exp_date: req.exp_date,
+                stok: req.quantity_to_add, 
+                sisa_stok: req.quantity_to_add,
+                no_po: req.no_po || null 
+            }, { transaction: t });
+
+            return { 
+                existingStock: newStockBatch, 
+                previous_stock: 0, 
+                new_stock: req.quantity_to_add 
+            };
+        }   
     }
 
     static async bulkCreate(req, transaction) {
@@ -489,7 +530,7 @@ export default class StockMedisRepository {
                 {
                     model: StockMedisModel,
                     as: "stocks",
-                    required: true,
+                    required: false,
                     attributes: ["uuid", "sisa_stok", "exp_date", "harga_satuan", "created_at"],
                     where: stockWhereClause,
                     include: [
@@ -502,6 +543,13 @@ export default class StockMedisRepository {
                             }
                         }
                     ]
+                },
+                {
+                    model: HargaItemModel,
+                    as: "detail_harga", 
+                    attributes: ["harga_dasar", "hna", "harga_terakhir"],
+                    required: false,
+                    where: { faskes_uuid: req.faskes_uuid }
                 }
             ],
             limit: limit,

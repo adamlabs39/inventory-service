@@ -13,29 +13,12 @@ import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class ItemMedisJenisStokRepository {
   static async getForKartuStok(req) {
-    const whereItemMedis = {};
-    const whereJenisStok = {};
-    const whereLokasiStok = {
-      sisa_stok: {
-        [Op.gt]: 0,
-      },
-    };
+    const { faskes_uuid, jenis_item, jenis_stok_uuid, lokasi_stok_uuid, search } = req;
+    const searchQuery = search ?? "";
 
-    if (req.jenis_item) {
-      whereItemMedis.jenis_item = req.jenis_item;
-    }
-
-    if (req.jenis_stok_uuid) {
-      whereJenisStok.uuid = req.jenis_stok_uuid;
-    }
-
-    if (req.lokasi_stok_uuid) {
-      whereLokasiStok.lokasi_stok_uuid = req.lokasi_stok_uuid;
-    }
-
-    const option = {
+    const options = {
       where: {
-        faskes_uuid: req.faskes_uuid,
+        faskes_uuid: faskes_uuid,
       },
       attributes: ["uuid"],
       include: [
@@ -44,11 +27,13 @@ export default class ItemMedisJenisStokRepository {
           as: "item_medis",
           required: true,
           attributes: ["uuid", "name", "jenis_item"],
-          where: whereItemMedis,
-          [Op.or]: [
-            { name: { [Op.iLike]: `%${req.search}%` } },
-            { code: { [Op.iLike]: `%${req.search}%` } },
-          ],
+          where: {
+            [Op.or]: [
+              { name: { [Op.iLike]: `%${searchQuery}` } },
+              { code: { [Op.iLike]: `%${searchQuery}` } },
+            ],
+            ...(jenis_item && { jenis_item: jenis_item }),
+          },
           include: [
             {
               model: KategoriObatModel,
@@ -69,27 +54,32 @@ export default class ItemMedisJenisStokRepository {
           as: "detail_stok",
           required: true,
           attributes: ["uuid", "name"],
-          where: whereJenisStok,
+          where: { ...jenis_stok_uuid && { uuid: jenis_stok_uuid } },
         },
         {
           model: StockMedisModel,
-          as: "stocks",
+          as: "stocks", 
           required: true,
           attributes: ["sisa_stok"],
-          where: whereLokasiStok,
+          where: {
+            sisa_stok: {
+              [Op.gt]: 0,
+            },
+            ...(lokasi_stok_uuid && { lokasi_stok_uuid: lokasi_stok_uuid }),
+          },
           include: [
             {
               model: LokasiStokModel,
               as: "lokasi_stok",
               required: false,
               attributes: ["name"],
-            },
-          ],
-        },
-      ],
+            }
+          ]
+        }
+      ]
     };
 
-    return await Pagination.init(ItemMedisJenisStokModel, req, option);
+    return await Pagination.init(ItemMedisJenisStokModel, req, options);
   }
 
   static async getDetailForStokAdjustment(req) {

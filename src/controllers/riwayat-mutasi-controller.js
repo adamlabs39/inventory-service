@@ -4,15 +4,14 @@ import successResponse from "../responses/success-response.js";
 export default class RiwayatMutasiController {
   static async getAll(req, res, nextFunction) {
     try {
-      req.query.faskes_uuid = req.author.faskesUuid;
-      const result = await RiwayatMutasiService.getAll(req.query);
-      // res.status(200).json(result)
-      // res.status(200).json(successResponse("Data berhasil ditampilkan", result));
-       res
-        .status(200)
-        .json(
-          successResponse("Data berhasil ditampilkan", result.data, result.pagination)
-        );
+      console.log("Controller - Value of req.author.faskesUuid:", req.author.faskesUuid);
+      const options = {
+        ...req.query, 
+        faskes_uuid: req.author.faskesUuid
+      };
+      const result = await RiwayatMutasiService.getAll(options);
+      console.log("Controller - serviceInput:", options);
+      res.status(200).json(successResponse("Data berhasil ditampilkan", result.data, result.pagination));
     } catch (error) {
       nextFunction(error);
     }
