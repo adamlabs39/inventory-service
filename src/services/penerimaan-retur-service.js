@@ -6,7 +6,6 @@ import BadRequestException from "../errors/bad-request-exception.js";
 export default class PenerimaanReturService {
     static async getAll(request) {
         ZodValidator.validate(PenerimaanReturValidation.GET_ALL, request);
-
         return await PenerimaanReturRepository.getAll(request);
     }
 

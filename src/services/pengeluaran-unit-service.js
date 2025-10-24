@@ -136,7 +136,7 @@ export default class PengeluaranUnitService {
                 name: item.item_medis_jenis_stok?.item_medis?.name,
                 uuid: item.item_medis_jenis_stok?.item_medis?.uuid,
                 sisa_stok: item.sisa_stok,
-                harga_satuan: item.harga_satuan,
+                harga_dasar: item.harga_satuan,
                 exp_date: item.exp_date
             };
         });

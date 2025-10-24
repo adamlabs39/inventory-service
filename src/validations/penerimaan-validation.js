@@ -25,7 +25,6 @@ export default class PenerimaanValidation {
 
     static GET_ALL = z.object({
         faskes_uuid: z.string().min(1, required),
-        lokasi_stok_tujuan_uuid: z.string().min(1, required),
     });
 
     static GET_DETAIL = z.object({

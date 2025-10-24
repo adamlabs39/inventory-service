@@ -1,8 +1,8 @@
-import { ConversionModel, JenisStokModel, LokasiStokModel } from '@adameds/model-sdk/farmasi';
-import { MasterSupplierKategoriItemModel, PembelianBarangSupplierItemModel, PembelianBarangSupplierModel } from '@adameds/model-sdk/inventory';
-import { MasterSupplierModel } from '@adameds/model-sdk/inventory';
-import { ItemMedisModel } from '@adameds/model-sdk/farmasi';
-import { KabupatenModel, KecamatanModel, KelurahanModel, ProvinceModel } from '@adameds/model-sdk/datamaster';
+import { ConversionModel, JenisStokModel, LokasiStokModel } from "@adameds/model-sdk/farmasi";
+import { MasterSupplierKategoriItemModel, PembelianBarangSupplierItemModel, PembelianBarangSupplierModel } from "@adameds/model-sdk/inventory";
+import { MasterSupplierModel } from "@adameds/model-sdk/inventory";
+import { ItemMedisModel } from "@adameds/model-sdk/farmasi";
+import { KabupatenModel, KecamatanModel, KelurahanModel, ProvinceModel } from "@adameds/model-sdk/datamaster";
 
 export default function defineAssociations() {
     PembelianBarangSupplierModel.belongsTo(MasterSupplierModel, {

@@ -6,19 +6,19 @@ const kartuStokMutasiRoutes = express.Router();
 
 // Route untuk menampilkan semua data kartu stok
 kartuStokMutasiRoutes.get(
-    `/kartu-stok`, 
+    "/kartu-stok", 
     KartuStokController.getAll
 );
 
 // Route untuk menampilkan semua data riwayat mutasi
 kartuStokMutasiRoutes.get(
-    `/mutasi`, 
+    "/mutasi", 
     RiwayatMutasiController.getAll
 );
 
 // Route untuk menambahkan riwayat mutasi baru
 kartuStokMutasiRoutes.post(
-    `/mutasi`, RiwayatMutasiController.create
+    "/mutasi", RiwayatMutasiController.create
 );
 
 export default kartuStokMutasiRoutes;
