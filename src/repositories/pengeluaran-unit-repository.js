@@ -16,46 +16,38 @@ export default class PengeluaranUnitRepository {
     }
 
     static async getAll(req) {
-        const whereClause = {
-            deleted_at: null,
-            faskes_uuid: req.faskes_uuid,
-        };
+        console.log("Repository received args:", req);
+        const { faskes_uuid, lokasi_stok_uuid, search = "", jenis_pengeluaran } = req;
 
-        if (req.lokasi_stok_uuid) {
-            whereClause.lokasi_stok_awal_uuid = req.lokasi_stok_uuid;
-        }
-
-        if (req.search) {
-            whereClause.no_pengeluaran = { [Op.iLike]: `%${req.search || ''}%` };
-        }
-        
-        if (req.jenis_pengeluaran) {
-            whereClause.jenis_pengeluaran = req.jenis_pengeluaran;
-        }
-        
-        const option = {
-            where: whereClause,
+        const options = {
+            where: {
+                deleted_at: null,
+                faskes_uuid: faskes_uuid,
+                ...(lokasi_stok_uuid && { lokasi_stok_awal_uuid: lokasi_stok_uuid }),
+                ...(search && { no_pengeluaran: { [Op.iLike]: `%${search}%` } }),
+                ...(jenis_pengeluaran && { jenis_pengeluaran: jenis_pengeluaran }),
+            },
             order: [["tanggal_pengeluaran", "DESC"]],
             attributes: {
-                exclude: ['deleted_at', 'created_at', 'updated_at', 'id']
+                exclude: ["deleted_at", "created_at", "updated_at", "id"]
             },
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok_akhir',
+                    as: "lokasi_stok_akhir",
                     required: false,
-                    attributes: ['name']
+                    attributes: ["name"],
                 },
                 {
                     model: JenisStokModel,
-                    as: 'jenis_stok',
+                    as: "jenis_stok",
                     required: false,
-                    attributes: ['name']
+                    attributes: ["name"],
                 }
-            ]
-        }
+            ],
+        };
 
-        return await Pagination.init(PengeluaranUnitModel, req, option);
+        return await Pagination.init(PengeluaranUnitModel, req, options);
     }
 
     static async getDetail(uuid) {
@@ -66,38 +58,38 @@ export default class PengeluaranUnitRepository {
             include: [
                 {
                     model: LokasiStokModel,
-                    as: 'lokasi_stok_akhir',
+                    as: "lokasi_stok_akhir",
                     required: false,
-                    attributes: ['name']
+                    attributes: ["name"]
                 },
                 {
                     model: JenisStokModel,
-                    as: 'jenis_stok',
+                    as: "jenis_stok",
                     required: false,
-                    attributes: ['name']
+                    attributes: ["name"]
                 },
                 {
                     model: PengeluaranUnitItemModel,
-                    as: 'items',
+                    as: "items",
                     required: false,
                     include: [
                         {
                             model: StockMedisModel,
-                            as: 'stok',
+                            as: "stok",
                             required: false,
                             attributes: ["uuid"],
                             include: [
                                 {
                                     model: ItemMedisJenisStokModel,
-                                    as: 'item_medis_jenis_stok',
+                                    as: "item_medis_jenis_stok",
                                     required: true,
-                                    attributes: ['uuid'],
+                                    attributes: ["uuid"],
                                     include: [
                                         {
                                             model: ItemMedisModel,
-                                            as: 'item_medis',
+                                            as: "item_medis",
                                             required: false,
-                                            attributes: ['name']
+                                            attributes: ["name"]
                                         },
                                     ]
                                 }
@@ -105,9 +97,9 @@ export default class PengeluaranUnitRepository {
                         },
                         {
                             model: ConversionModel,
-                            as: 'konversi',
+                            as: "konversi",
                             required: false,
-                            attributes: ['konversi', 'satuan_penggunaan'],
+                            attributes: ["konversi", "satuan_penggunaan"],
                         },
                     ]
                 }

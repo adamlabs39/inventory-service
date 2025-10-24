@@ -3,10 +3,16 @@ import {required} from "./message-validation-error.js";
 
 export default class RiwayatMutasiValidation {
     static GET_ALL = z.object({
-        faskes_uuid: z.string().min(1, required),
-        start_date: z.optional(z.string().min(1, required)),
-        end_date: z.optional(z.string().min(1, required)),
-        lokasi_stok_uuid: z.string().min(1, required),
+        faskes_uuid: z.string().uuid(required), 
+        lokasi_stok_uuid: z.string().uuid().optional(),
+        code: z.string().optional(), 
+        start_date: z.string().optional(),
+        end_date: z.string().optional(),
+        jenis_stok_uuid: z.string().uuid().optional(),
+        jenis_item: z.string().optional(), 
+        search: z.string().optional(),
+        page: z.string().optional(), 
+        limit: z.string().optional()
     });
 
     static CREATE = z.object({
@@ -29,5 +35,5 @@ export default class RiwayatMutasiValidation {
             lokasi_stok_uuid: z.string().min(1, required),
             jenis_stok_uuid: z.string().min(1, required),
         }))
-    })
+    });
 }

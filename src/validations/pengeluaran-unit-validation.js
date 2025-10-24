@@ -39,10 +39,10 @@ export default class PengeluaranUnitValidation {
 
     static GET_ALL = z.object({
         faskes_uuid: z.string().uuid("faskes_uuid tidak valid"),
-        lokasi_stok_uuid: z.string()
-            .min(1, "Lokasi Stok tidak boleh kosong")
-            .optional(),
+        lokasi_stok_uuid: z.string().min(1, "Lokasi Stok tidak boleh kosong").optional(),
         search: z.string().optional(),
+        page: z.string().optional(),
+        limit: z.string().optional()
     });
 
     static GET_DETAIL = z.object({
