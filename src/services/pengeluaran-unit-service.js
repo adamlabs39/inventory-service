@@ -12,29 +12,42 @@ import InternalServerException from "../errors/internal-server-exception.js";
 
 export default class PengeluaranUnitService {
     static async create(req) {
-        let validatedData;
+        let validatedData = await PengeluaranUnitValidation.CREATE.parseAsync(req);
+
         let lokasiStokAwalUuidToUse;
-        
-        if (req.jenis_pengeluaran === "pemusnahan barang") {
-        validatedData = await PengeluaranUnitValidation.CREATE_PEMUSNAHAN.parseAsync(req);
-        lokasiStokAwalUuidToUse = validatedData.lokasi_stok_tujuan_uuid; 
-        } else if (req.jenis_pengeluaran === "pengeluaran tanpa permintaan") {
-            validatedData = await PengeluaranUnitValidation.CREATE_PENGELUARAN_TANPA_PERMINTAAN.parseAsync(req);
-            lokasiStokAwalUuidToUse = validatedData.lokasi_stok_awal_uuid; 
-        } else {
-            validatedData = await PengeluaranUnitValidation.CREATE.parseAsync(req);
+        let lokasiStokTujuanUuidForHeader = null;
+        let jenisPemusnahanForHeader = null;
+
+        if (validatedData.jenis_pengeluaran === "pemakaian unit") {
             lokasiStokAwalUuidToUse = validatedData.lokasi_stok_tujuan_uuid; 
+        } else if (validatedData.jenis_pengeluaran === "pemusnahan barang") {
+            lokasiStokAwalUuidToUse = validatedData.lokasi_stok_awal_uuid;
+            jenisPemusnahanForHeader = validatedData.jenis_pemusnahan;
+        } else { 
+            lokasiStokAwalUuidToUse = validatedData.lokasi_stok_awal_uuid;
+            lokasiStokTujuanUuidForHeader = validatedData.lokasi_stok_tujuan_uuid;
         }
 
         const transaction = await sequelizeInstance.transaction();
 
         try {
             const pengeluaranHeader = {
-                ...validatedData,
-                items: undefined, 
+                faskes_uuid: validatedData.faskes_uuid,
+                jenis_pengeluaran: validatedData.jenis_pengeluaran,
+                jenis_item: validatedData.jenis_item,
+                kategori_item: validatedData.kategori_item,
+                jenis_stok_uuid: validatedData.jenis_stok_uuid,
+                tanggal_pengeluaran: validatedData.tanggal_pengeluaran,
+                petugas_pengeluaran: validatedData.petugas_pengeluaran,
+                petugas_pengeluaran_uuid: validatedData.petugas_pengeluaran_uuid,
+                catatan: validatedData.catatan,
+                lokasi_stok_awal_uuid: lokasiStokAwalUuidToUse,
+                lokasi_stok_tujuan_uuid: lokasiStokTujuanUuidForHeader,
+                jenis_pemusnahan: jenisPemusnahanForHeader,
                 uuid: uuidv7(),
                 no_pengeluaran: Utils.generate4Code("PGL"),
-                lokasi_stok_awal_uuid: lokasiStokAwalUuidToUse,
+                total_item: validatedData.items.length,
+                total_harga: validatedData.items.reduce((acc, item) => acc + (item.harga_satuan * item.qty), 0),
             };
 
             const pengeluaranItems = validatedData.items.map((item) => ({
@@ -44,13 +57,10 @@ export default class PengeluaranUnitService {
                 uuid: uuidv7()
             }));
 
-            pengeluaranHeader.total_item = pengeluaranItems.length;
-            pengeluaranHeader.total_harga = pengeluaranItems.reduce((acc, item) => acc + (item.harga_satuan * item.qty), 0);
-
             await PengeluaranUnitRepository.create(pengeluaranHeader, transaction);
             await PengeluaranUnitItemRepository.bulkCreate(pengeluaranItems, transaction);
-            const allMutasiItems = []; 
 
+            const allMutasiItems = []; 
             for (const item of pengeluaranItems) {
                 const affectedStocks = await StockMedisRepository.reduceQuantity({
                     stock_medis_uuid: item.stock_uuid, 
