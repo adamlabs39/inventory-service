@@ -10,8 +10,8 @@
     "start": "node ./src/app.js"
   },
   "dependencies": {
-    "@adameds/authorization-sdk": "^1.0.5",
-    "@adameds/model-sdk": "^1.0.91",
+    "@adameds/authorization-sdk": "^1.0.0",
+    "@adameds/model-sdk": "^1.0.93",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
